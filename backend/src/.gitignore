@@ -1,0 +1,28 @@
+# macOS System Files
+.DS_Store
+.DS_Store?
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Code Editor Files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Node.js (JavaScript/TypeScript)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+build/
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+env/
