@@ -1,330 +1,145 @@
-"use client"
+import React from 'react';
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PlusCircle, FileText, Briefcase, ArrowRight } from "lucide-react";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { onAuthStateChanged } from "firebase/auth"
-import { auth } from "../../lib/firebase"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { toast } from "@/components/ui/use-toast"
-
-// Mock data for development
-const MOCK_EXPERIENCES = [
-  { 
-    id: 1, 
-    title: "Senior Frontend Developer", 
-    company: "Tech Giants Inc", 
-    description: "Led development of core user-facing features using React and TypeScript. Implemented state management solutions and optimized performance." 
+const MOCK_COVER_LETTERS = [
+  {
+    id: 1,
+    company: "Tech Giants Inc",
+    position: "Senior Frontend Developer",
+    createdAt: "2024-02-05",
+    content: "Dear Hiring Manager..."
   },
-  { 
-    id: 2, 
-    title: "Full Stack Engineer", 
-    company: "Startup Innovators", 
-    description: "Built scalable microservices architecture. Developed and maintained both frontend and backend systems using Node.js and React." 
-  },
-  { 
-    id: 3, 
-    title: "Software Engineering Intern", 
-    company: "CodeCraft Labs", 
-    description: "Collaborated on building internal tools. Gained hands-on experience with agile development practices and modern web technologies." 
+  {
+    id: 2,
+    company: "Startup Innovators",
+    position: "Full Stack Engineer",
+    createdAt: "2024-02-03",
+    content: "Dear Hiring Team..."
   }
-]
+];
 
-// Development mode flag - set to true to bypass authentication
-const DEV_MODE = true  // For development, hardcode to true. Change to process.env.NODE_ENV === 'production' when deploying
-
-// Mock user for development
-const MOCK_USER = {
-  uid: 'dev-user-123',
-  email: 'dev@example.com',
-  getIdToken: async () => 'mock-token-for-development'
-}
-
-export default function Dashboard() {
-  const router = useRouter()
-  const [user, setUser] = useState<any>(DEV_MODE ? MOCK_USER : null)
-  const [experiences, setExperiences] = useState(DEV_MODE ? MOCK_EXPERIENCES : [])
-  const [newExperience, setNewExperience] = useState({ title: "", company: "", description: "" })
-  const [jobDescription, setJobDescription] = useState("")
-  const [selectedExperiences, setSelectedExperiences] = useState<number[]>([])
-  const [coverLetter, setCoverLetter] = useState("")
-
-  useEffect(() => {
-    // In development mode, we don't need to check authentication
-    if (DEV_MODE) {
-      setUser(MOCK_USER)
-      return
-    }
-
-    // Only check authentication in production
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser)
-      } else {
-        router.push("/login")
-      }
-    })
-
-    return () => unsubscribe()
-  }, [router])
-
-  const handleAddExperience = () => {
-    if (!newExperience.title || !newExperience.company) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in at least the title and company.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setExperiences([...experiences, { id: Date.now(), ...newExperience }])
-    setNewExperience({ title: "", company: "", description: "" })
-    toast({
-      title: "Experience Added",
-      description: "Your new experience has been added successfully.",
-    })
-  }
-
-  const handleGenerateCoverLetter = async () => {
-    try {
-      if (!DEV_MODE && !user) {
-        throw new Error("User not authenticated")
-      }
-
-      if (!jobDescription || selectedExperiences.length === 0) {
-        toast({
-          title: "Missing Information",
-          description: "Please provide a job description and select at least one experience.",
-          variant: "destructive",
-        })
-        return
-      }
-
-      // In development mode, generate a mock cover letter
-      if (DEV_MODE) {
-        // Commenting out the mock cover letter generation
-        /*
-        const mockCoverLetter = `Dear Hiring Manager,
-
-I am writing to express my strong interest in the position at your company. With my background in software development and experience in [selected experiences], I believe I would be a valuable addition to your team.
-
-[Mock cover letter content based on selected experiences and job description]
-
-Thank you for considering my application.
-
-Best regards,
-Development User`
-
-        setCoverLetter(mockCoverLetter)
-        toast({
-          title: "Cover Letter Generated (Dev Mode)",
-          description: "Mock cover letter generated for development.",
-        })
-        return
-        */
-      }
-
-      // Production API call
-      const idToken = await user.getIdToken()
-      const response = await fetch("http://localhost:8000/api/generate-cover-letter", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({
-          jobDescription,
-          experiences: experiences.filter((exp) => selectedExperiences.includes(exp.id)),
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to generate cover letter")
-      }
-
-      const data = await response.json()
-      setCoverLetter(data.cover_letter)
-      toast({
-        title: "Cover Letter Generated",
-        description: "Your personalized cover letter is ready!",
-      })
-    } catch (error) {
-      console.error("Error generating cover letter:", error)
-      toast({
-        title: "Error",
-        description: "Failed to generate cover letter. Please try again.",
-        variant: "destructive",
-      })
-    }
-  }
-
-  // Remove loading state in dev mode
-  if (!DEV_MODE && !user) {
-    return <div>Loading...</div>
-  }
-
+const Dashboard = () => {
+  const coverLetters = MOCK_COVER_LETTERS;
+  
   return (
-    <div className="container mx-auto p-4">
-      {DEV_MODE && (
-        <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4 mb-4">
-          <p className="text-yellow-700">
-            Development Mode Active - Authentication Bypassed
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="container mx-auto p-6 space-y-8">
+        {/* Welcome Section */}
+        <div className="mb-12 text-center">
+          <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-primary to-blue-600 dark:from-primary dark:to-blue-400 bg-clip-text text-transparent">
+            Welcome Back
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300">
+            Manage your professional profile and create compelling cover letters
           </p>
         </div>
-      )}
-      <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
-      <Tabs defaultValue="experiences" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="experiences">Manage Experiences</TabsTrigger>
-          <TabsTrigger value="generate">Generate Cover Letter</TabsTrigger>
-        </TabsList>
 
-        <TabsContent value="experiences">
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Experiences</CardTitle>
-              <CardDescription>Add and manage your professional experiences</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {experiences.map((exp) => (
-                  <div key={exp.id} className="p-4 border rounded hover:border-primary transition-colors">
-                    <h3 className="font-bold">{exp.title}</h3>
-                    <p className="text-sm text-muted-foreground">{exp.company}</p>
-                    <p className="mt-2 text-sm">{exp.description}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-6 space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Job Title</Label>
-                  <Input
-                    id="title"
-                    placeholder="e.g., Software Engineer"
-                    value={newExperience.title}
-                    onChange={(e) => setNewExperience({ ...newExperience, title: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="company">Company</Label>
-                  <Input
-                    id="company"
-                    placeholder="e.g., Tech Company Inc"
-                    value={newExperience.company}
-                    onChange={(e) => setNewExperience({ ...newExperience, company: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    placeholder="Describe your role and key achievements..."
-                    value={newExperience.description}
-                    onChange={(e) => setNewExperience({ ...newExperience, description: e.target.value })}
-                    className="min-h-[100px]"
-                  />
-                </div>
-                <Button onClick={handleAddExperience} className="w-full">
-                  Add Experience
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="generate">
-          <Card>
-            <CardHeader>
-              <CardTitle>Generate Cover Letter</CardTitle>
-              <CardDescription>Create a personalized cover letter using AI</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="jobDescription">Job Description</Label>
-                  <Textarea
-                    id="jobDescription"
-                    placeholder="Paste the job description here..."
-                    value={jobDescription}
-                    onChange={(e) => setJobDescription(e.target.value)}
-                    className="min-h-[200px]"
-                  />
-                </div>
-
-                <div className="space-y-4">
-                  <Label>Select Relevant Experiences</Label>
-                  <div className="space-y-2">
-                    {experiences.map((exp) => (
-                      <div key={exp.id} className="flex items-start space-x-2">
-                        <Checkbox
-                          id={`exp-${exp.id}`}
-                          checked={selectedExperiences.includes(exp.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedExperiences([...selectedExperiences, exp.id])
-                            } else {
-                              setSelectedExperiences(selectedExperiences.filter((id) => id !== exp.id))
-                            }
-                          }}
-                          className="mt-1"
-                        />
-                        <Label htmlFor={`exp-${exp.id}`} className="leading-none">
-                          <span className="font-medium">{exp.title}</span>
-                          <span className="block text-sm text-muted-foreground">
-                            at {exp.company}
-                          </span>
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <Button
-                  onClick={handleGenerateCoverLetter}
-                  className="w-full"
-                  disabled={!jobDescription || selectedExperiences.length === 0}
-                >
-                  Generate Cover Letter
-                </Button>
-
-                {coverLetter && (
-                  <div className="space-y-4">
-                    <Label htmlFor="coverLetter">Generated Cover Letter</Label>
-                    <Textarea
-                      id="coverLetter"
-                      value={coverLetter}
-                      readOnly
-                      className="min-h-[400px]"
-                    />
-                    <div className="flex space-x-2">
-                      <Button
-                        onClick={() => {
-                          navigator.clipboard.writeText(coverLetter)
-                          toast({
-                            title: "Copied",
-                            description: "Cover letter copied to clipboard",
-                          })
-                        }}
-                      >
-                        Copy to Clipboard
-                      </Button>
-                      <Button variant="outline" onClick={() => window.print()}>
-                        Print
-                      </Button>
+        {/* Navigation Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+          <Link href="/skills-and-experiences">
+            <Card className="group hover:shadow-lg transition-all duration-300 hover:border-primary cursor-pointer overflow-hidden">
+              <CardContent className="p-0">
+                <div className="relative bg-gradient-to-br from-blue-50 to-white dark:from-gray-800 dark:to-gray-900 p-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="p-3 bg-primary/10 rounded-xl group-hover:bg-primary/20 transition-colors">
+                      <Briefcase className="w-8 h-8 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-xl mb-1">Skills & Experience</h3>
+                      <p className="text-sm text-muted-foreground">Manage your professional background</p>
                     </div>
                   </div>
-                )}
+                  <ArrowRight className="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300 text-primary" />
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/generate-cover-letter">
+            <Card className="group hover:shadow-lg transition-all duration-300 hover:border-primary cursor-pointer overflow-hidden">
+              <CardContent className="p-0">
+                <div className="relative bg-gradient-to-br from-blue-50 to-white dark:from-gray-800 dark:to-gray-900 p-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="p-3 bg-primary/10 rounded-xl group-hover:bg-primary/20 transition-colors">
+                      <FileText className="w-8 h-8 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-xl mb-1">New Cover Letter</h3>
+                      <p className="text-sm text-muted-foreground">Generate a tailored cover letter</p>
+                    </div>
+                  </div>
+                  <ArrowRight className="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300 text-primary" />
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+
+        {/* Cover Letters Section */}
+        <Card className="shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between border-b">
+            <div>
+              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+                Your Cover Letters
+              </CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                Access and manage your personalized cover letters
+              </p>
+            </div>
+            <Button className="bg-primary hover:bg-primary/90 text-white shadow-md hover:shadow-lg transition-all">
+              <PlusCircle className="w-4 h-4 mr-2" />
+              New Cover Letter
+            </Button>
+          </CardHeader>
+          <CardContent className="p-6">
+            {coverLetters.length === 0 ? (
+              <div className="text-center py-16 px-4">
+                <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6">
+                  <FileText className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold mb-3">Generate Your First Cover Letter!</h3>
+                <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
+                  Create personalized cover letters tailored to your experience and stand out to potential employers
+                </p>
+                <Button className="bg-primary hover:bg-primary/90 text-white shadow-md hover:shadow-lg transition-all">
+                  <PlusCircle className="w-4 h-4 mr-2" />
+                  Get Started
+                </Button>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            ) : (
+              <div className="grid gap-4">
+                {coverLetters.map((letter) => (
+                  <Card key={letter.id} className="group hover:shadow-md transition-all duration-300 hover:border-primary cursor-pointer bg-gradient-to-r from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-center">
+                        <div className="space-y-1">
+                          <h4 className="font-semibold text-lg group-hover:text-primary transition-colors">
+                            {letter.position}
+                          </h4>
+                          <p className="text-sm text-muted-foreground">
+                            {letter.company}
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                          <span className="text-sm text-muted-foreground">
+                            {new Date(letter.createdAt).toLocaleDateString()}
+                          </span>
+                          <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300 text-primary" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
-  )
-}
+  );
+};
+
+export default Dashboard;
