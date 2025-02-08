@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PlusCircle, Brain, Users, Briefcase, BarChart, Lightbulb, Pencil, Globe, Zap, LucideIcon } from "lucide-react";
+import { PlusCircle, Brain, Users, Briefcase, BarChart, Lightbulb, Pencil, Globe, Zap, LucideIcon, FolderGit2 } from "lucide-react";
 
 interface Skill {
   name: string;
@@ -18,14 +18,24 @@ interface SkillCategory {
   skills: Skill[];
 }
 
-interface Experience {
+interface BaseExperience {
   id: number;
   title: string;
+  description?: string;
+  highlights: string[];
+}
+
+interface WorkExperience extends BaseExperience {
   company: string;
   period: string;
   location: string;
   type: string;
-  highlights: string[];
+}
+
+interface Project extends BaseExperience {
+  technologies: string[];
+  date: string;
+  link?: string;
 }
 
 const MOCK_SKILLS: SkillCategory[] = [
@@ -49,34 +59,61 @@ const MOCK_SKILLS: SkillCategory[] = [
     skills: [
       { name: "Team Collaboration", level: "Expert", years: 5 },
       { name: "Public Speaking", level: "Advanced", years: 3 },
-      { name: "Conflict Resolution", level: "Advanced", years: 4 }
+      { name: "Conflict Resolution", level: "Advanced", years: 4 },
+      { name: "Client Relations", level: "Expert", years: 4 }
     ]
   },
   {
     id: 3,
     category: "Technical Skills",
     icon: Brain,
-    description: "Tools and technologies expertise",
+    description: "Tools and technical expertise",
     skills: [
       { name: "Data Analysis", level: "Advanced", years: 3 },
-      { name: "Digital Marketing", level: "Intermediate", years: 2 },
-      { name: "Content Creation", level: "Expert", years: 4 }
+      { name: "Digital Marketing", level: "Expert", years: 5 },
+      { name: "CRM Systems", level: "Advanced", years: 3 },
+      { name: "SEO/SEM", level: "Intermediate", years: 2 }
     ]
   },
   {
     id: 4,
+    category: "Creative Skills",
+    icon: Pencil,
+    description: "Design and creative abilities",
+    skills: [
+      { name: "Content Creation", level: "Expert", years: 4 },
+      { name: "Brand Development", level: "Advanced", years: 3 },
+      { name: "Visual Design", level: "Intermediate", years: 2 },
+      { name: "Social Media Strategy", level: "Expert", years: 4 }
+    ]
+  },
+  {
+    id: 5,
+    category: "Analytical Skills",
+    icon: BarChart,
+    description: "Research and analysis capabilities",
+    skills: [
+      { name: "Market Research", level: "Advanced", years: 3 },
+      { name: "Performance Analytics", level: "Expert", years: 4 },
+      { name: "Business Intelligence", level: "Advanced", years: 3 },
+      { name: "Competitive Analysis", level: "Advanced", years: 3 }
+    ]
+  },
+  {
+    id: 6,
     category: "Languages",
     icon: Globe,
     description: "Language proficiencies",
     skills: [
       { name: "English", level: "Expert", years: 20 },
       { name: "Spanish", level: "Intermediate", years: 3 },
-      { name: "Mandarin", level: "Beginner", years: 1 }
+      { name: "Mandarin", level: "Beginner", years: 1 },
+      { name: "French", level: "Advanced", years: 5 }
     ]
   }
 ];
 
-const MOCK_EXPERIENCES: Experience[] = [
+const MOCK_WORK_EXPERIENCES: WorkExperience[] = [
   {
     id: 1,
     title: "Marketing Manager",
@@ -102,19 +139,35 @@ const MOCK_EXPERIENCES: Experience[] = [
       "Improved project delivery efficiency by implementing new management tools",
       "Managed client relationships and expectations effectively"
     ]
+  }
+];
+
+const MOCK_PROJECTS: Project[] = [
+  {
+    id: 1,
+    title: "Personal Portfolio Website",
+    technologies: ["React", "TypeScript", "Tailwind CSS"],
+    date: "Jan 2024",
+    description: "A modern portfolio website showcasing my work and skills",
+    highlights: [
+      "Implemented responsive design with modern UI/UX principles",
+      "Integrated dark mode and accessibility features",
+      "Achieved 95+ performance score on Lighthouse"
+    ],
+    link: "https://portfolio.example.com"
   },
   {
-    id: 3,
-    title: "Marketing Associate",
-    company: "Creative Agency",
-    period: "2019 - 2020",
-    location: "Boston, MA",
-    type: "Full-time",
+    id: 2,
+    title: "Community Event Platform",
+    technologies: ["Next.js", "Node.js", "PostgreSQL"],
+    date: "Nov 2023",
+    description: "A platform for organizing and managing local community events",
     highlights: [
-      "Assisted in developing marketing strategies for various client campaigns",
-      "Created content for social media platforms and websites",
-      "Conducted market research and competitor analysis"
-    ]
+      "Built full-stack application with real-time updates",
+      "Implemented user authentication and authorization",
+      "Developed API for event management and RSVPs"
+    ],
+    link: "https://github.com/username/event-platform"
   }
 ];
 
@@ -153,20 +206,17 @@ const SkillsAndExperience: React.FC = () => {
 
         {/* Tabs */}
         <Tabs defaultValue="skills" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="skills">Skills</TabsTrigger>
-            <TabsTrigger value="experience">Experience</TabsTrigger>
+            <TabsTrigger value="work">Work Experience</TabsTrigger>
+            <TabsTrigger value="projects">Projects</TabsTrigger>
           </TabsList>
 
+          {/* Skills Tab */}
           <TabsContent value="skills">
             <Card className="shadow-lg">
-              <CardHeader className="flex flex-row items-center justify-between border-b">
-                <div>
-                  <CardTitle className="text-2xl font-bold">Skills</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Your expertise and competencies
-                  </p>
-                </div>
+              <CardHeader>
+                <CardTitle>Skills</CardTitle>
               </CardHeader>
               <CardContent className="p-6">
                 <div className="grid gap-6">
@@ -212,19 +262,20 @@ const SkillsAndExperience: React.FC = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="experience">
+          {/* Work Experience Tab */}
+          <TabsContent value="work">
             <Card className="shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between border-b">
                 <div>
-                  <CardTitle className="text-2xl font-bold">Experience</CardTitle>
+                  <CardTitle className="text-2xl font-bold">Professional Experience</CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Professional work history and achievements
+                    Your work history and achievements
                   </p>
                 </div>
               </CardHeader>
               <CardContent className="p-6">
                 <div className="space-y-6">
-                  {MOCK_EXPERIENCES.map((experience) => (
+                  {MOCK_WORK_EXPERIENCES.map((experience) => (
                     <Card key={experience.id} className="group hover:shadow-md transition-all duration-300 hover:border-primary">
                       <CardContent className="p-6">
                         <div className="flex justify-between items-start mb-4">
@@ -252,6 +303,77 @@ const SkillsAndExperience: React.FC = () => {
                             </li>
                           ))}
                         </ul>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Projects Tab */}
+          <TabsContent value="projects">
+            <Card className="shadow-lg">
+              <CardHeader className="flex flex-row items-center justify-between border-b">
+                <div>
+                  <CardTitle className="text-2xl font-bold">Personal Projects</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Your side projects and personal work
+                  </p>
+                </div>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-6">
+                  {MOCK_PROJECTS.map((project) => (
+                    <Card key={project.id} className="group hover:shadow-md transition-all duration-300 hover:border-primary">
+                      <CardContent className="p-6">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <h3 className="font-semibold text-xl group-hover:text-primary transition-colors">
+                              {project.title}
+                            </h3>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {project.date}
+                            </p>
+                            {project.description && (
+                              <p className="text-gray-600 dark:text-gray-300 mt-2">
+                                {project.description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-2 my-3">
+                          {project.technologies.map((tech, index) => (
+                            <span
+                              key={index}
+                              className="px-2 py-1 rounded-full bg-primary/10 text-primary text-sm"
+                            >
+                              {tech}
+                            </span>
+                          ))}
+                        </div>
+
+                        <ul className="space-y-2 mt-4">
+                          {project.highlights.map((highlight, index) => (
+                            <li key={index} className="flex items-start">
+                              <Zap className="w-4 h-4 text-primary mt-1 mr-2 flex-shrink-0" />
+                              <span className="text-gray-600 dark:text-gray-300">{highlight}</span>
+                            </li>
+                          ))}
+                        </ul>
+
+                        {project.link && (
+                          <a
+                            href={project.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center mt-4 text-primary hover:underline"
+                          >
+                            <FolderGit2 className="w-4 h-4 mr-2" />
+                            View Project
+                          </a>
+                        )}
                       </CardContent>
                     </Card>
                   ))}

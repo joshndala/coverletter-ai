@@ -8,6 +8,9 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "AI Cover Letter Generator",
   description: "Generate personalized cover letters using AI",
+  icons: {
+    icon: "/favicon.png",
+  },
 }
 
 export default function RootLayout({
