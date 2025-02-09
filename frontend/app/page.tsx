@@ -7,7 +7,7 @@ export default function Welcome() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-primary">
       <div className="mb-8">
         <Image
-          src="/coverforme_logo.png"
+          src="/coverforme_logo_transparent.png"
           alt="CoverForMe Logo"
           width={700}
           height={350}
