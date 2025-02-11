@@ -2,9 +2,10 @@ from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List
-from .database import engine, get_db
-from . import models, schemas
-from .services.cover_letter_service import generate_cover_letter
+from database import engine, get_db
+import models, schemas
+from models.request_models import CoverLetterRequest 
+from services.cover_letter_service import generate_cover_letter
 import boto3
 
 app = FastAPI()
@@ -27,7 +28,7 @@ bedrock = boto3.client(
 @app.post("/api/generate-cover-letter")
 async def create_cover_letter(request: CoverLetterRequest):
     try:
-        cover_letter = await generate_cover_letter(request, bedrock)
-        return {"cover_letter": cover_letter}
+        response = await generate_cover_letter(request, bedrock)
+        return response  
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

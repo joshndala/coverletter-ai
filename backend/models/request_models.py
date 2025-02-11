@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import List
+from typing import Optional, List 
 
 class Experience(BaseModel):
     title: str
@@ -12,3 +13,4 @@ class CoverLetterRequest(BaseModel):
     hiring_manager: Optional[str] = None
     job_description: str
     experiences: List[Experience]
+    duration: Optional[str] = None

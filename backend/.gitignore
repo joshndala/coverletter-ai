@@ -1,4 +1,5 @@
 .env
+coverletter_ai_env/
 
 # macOS System Files
 .DS_Store
