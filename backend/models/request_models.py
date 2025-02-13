@@ -14,3 +14,8 @@ class CoverLetterRequest(BaseModel):
     job_description: str
     experiences: List[Experience]
     duration: Optional[str] = None
+
+class CoverLetterOutput(BaseModel):
+    cover_letter: str
+    chances: str
+    chances_explanation: str

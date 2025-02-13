@@ -1,6 +1,12 @@
 from typing import List
 import json
-from models.request_models import CoverLetterRequest
+from models.request_models import CoverLetterRequest, CoverLetterOutput
+from langchain.output_parsers import PydanticOutputParser
+from langchain.prompts import PromptTemplate
+import re
+
+# Parser
+parser = PydanticOutputParser(pydantic_object=CoverLetterOutput)
 
 async def generate_cover_letter(request: CoverLetterRequest, bedrock_client):
     prompt = construct_prompt(request)
@@ -9,20 +15,32 @@ async def generate_cover_letter(request: CoverLetterRequest, bedrock_client):
         response = bedrock_client.invoke_model(
             modelId="us.meta.llama3-2-3b-instruct-v1:0",
             body=json.dumps({
-                "prompt": prompt,  
-                #"max_tokens": 1000, 
+                "prompt": prompt,
                 "temperature": 0.7,
                 "top_p": 0.9
             })
         )
         
         response_body = json.loads(response['body'].read())
+
         try:
-            # Try to parse the generated text as JSON
-            generated_content = json.loads(response_body['generation'])
-            return generated_content
-        except json.JSONDecodeError as json_error:
-            # If JSON parsing fails, return the raw text with error details
+
+            raw_output = response_body.get('generation', '')
+            json_match = re.search(r"\{.*\}", raw_output, re.DOTALL)
+
+            if not json_match:
+                raise ValueError(f"Failed to extract JSON from model output: {raw_output}")
+
+            clean_json = json_match.group()  # Extracted JSON block
+
+            try:
+                parsed_output = json.loads(clean_json)  # Parse the extracted JSON
+                return parsed_output  # Ensure it's a valid dict
+            except json.JSONDecodeError as e:
+                raise Exception(f"Failed to decode JSON: {str(e)}\nExtracted JSON: {clean_json}")
+
+            return generated_content.dict()
+        except Exception as parse_error:
             raise Exception(f"Failed to parse model output as JSON. Raw output: {response_body['generation']}")
             
     except Exception as e:
@@ -34,32 +52,46 @@ def construct_prompt(request: CoverLetterRequest) -> str:
         for exp in request.experiences
     ])
     
-    prompt = f"""
-    Generate a professional cover letter for {request.company_name}.
-    
-    Job Description:
-    {request.job_description}
-    
-    Relevant Experiences:
-    {experiences_text}
-    
-    {"Hiring Manager: " + request.hiring_manager if request.hiring_manager else ""}
-    
-    Please write a compelling cover letter that:
-    1. Addresses the hiring manager personally (if provided)
-    2. Shows enthusiasm for the company
-    3. Connects the candidate's experiences with the job requirements
-    4. Maintains a professional yet engaging tone
-    5. Keeps the length to approximately 300-400 words
+    template = """You are a professional cover letter writer. Your task is to generate a cover letter based on the following information:
 
-    Also, give me the chances of getting the job based on the experiences provided. Along with the
-    chances, provide an explanation of why the candidate is a good fit for the job. Keep the explanation
-    length to approximately 100-150 words.
+        Company: {company_name}
 
-    Return your response in the following JSON format, and make sure it's valid JSON:
-    {{"cover_letter": "<the cover letter text>", "chances": "<percentage>", "chances_explanation": "<explanation text>"}}
+        Job Description:
+        {job_description}
 
-    ONLY RETURN THE JSON, NOTHING ELSE. START YOUR RESPONSE WITH '{{' AND END IT WITH '}}'.
-    """
+        Relevant Experiences:
+        {experiences}
+
+        {hiring_manager_text}
+
+        Requirements:
+        1. Write a compelling cover letter that:
+        - Addresses the hiring manager personally (if provided)
+        - Shows enthusiasm for the company
+        - Connects the candidate's experiences with the job requirements
+        - Maintains a professional yet engaging tone
+        - Keeps the length to approximately 300-400 words
+
+        2. Provide:
+        - A percentage chance of getting the job
+        - A brief explanation (100-150 words) of why the candidate is a good fit
+
+        Return ONLY a valid JSON response. Do NOT include any extra text, explanations, or comments. Do NOT use Markdown formatting (e.g., no ```json). 
+
+        Your response MUST start with an open curly bracket and end with closed curly bracket. Do not include any text outside the JSON block.
+        """
+
+    prompt = PromptTemplate(
+        template=template,
+        input_variables=["company_name", "job_description", "experiences", "hiring_manager_text"],
+        partial_variables={"format_instructions": parser.get_format_instructions()}
+    )
     
-    return prompt
+    hiring_manager_text = f"Hiring Manager: {request.hiring_manager}" if request.hiring_manager else ""
+    
+    return prompt.format(
+        company_name=request.company_name,
+        job_description=request.job_description,
+        experiences=experiences_text,
+        hiring_manager_text=hiring_manager_text
+    )
