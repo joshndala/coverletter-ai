@@ -1,49 +1,27 @@
 from logging.config import fileConfig
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from sqlalchemy import engine_from_config, pool
 from alembic import context
-
 import sys
 import os
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# Ensure the project root is in the Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+# Import settings and database
 from config.settings import settings
-from models import database_models
-from models.auth import User, Waitlist
-from models.profile import UserProfile
-from models.skills import Skill, UserSkill
-from models.experience import Experience, ExperienceSkill
-from models.application import JobApplication, JobApplicationExperience, JobApplicationSkill
-from models.cover_letter import CoverLetter, CoverLetterExperience
-from models.subscription import SubscriptionTier, UserSubscription, UserUsage
+from database import Base  # Import Base directly
+import models  # Ensure all models are imported before metadata is used
 
+# Alembic Configuration
 config = context.config
-
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Include all model metadata
-target_metadata = [
-    database_models.Base.metadata,
-    User.metadata,
-    Experience.metadata,
-    JobApplication.metadata,
-    Waitlist.metadata,
-    UserProfile.metadata,
-    Skill.metadata,
-    UserSkill.metadata,
-    ExperienceSkill.metadata,
-    JobApplicationExperience.metadata,
-    JobApplicationSkill.metadata,
-    CoverLetter.metadata,
-    CoverLetterExperience.metadata,
-    SubscriptionTier.metadata,
-    UserSubscription.metadata,
-    UserUsage.metadata
-]
+# Set target metadata
+target_metadata = Base.metadata  # Use a single metadata object
 
-def run_migrations_offline() -> None:
+def run_migrations_offline():
+    """Run migrations in 'offline' mode."""
     url = settings.DATABASE_URL
     context.configure(
         url=url,
@@ -55,7 +33,8 @@ def run_migrations_offline() -> None:
     with context.begin_transaction():
         context.run_migrations()
 
-def run_migrations_online() -> None:
+def run_migrations_online():
+    """Run migrations in 'online' mode."""
     configuration = config.get_section(config.config_ini_section)
     configuration["sqlalchemy.url"] = settings.DATABASE_URL
     connectable = engine_from_config(
@@ -65,9 +44,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()
