@@ -114,7 +114,7 @@ const CoverLetterGenerator = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedLetter, setGeneratedLetter] = useState('');
   const [showTips, setShowTips] = useState(true);
-  const [useAiSelection, setUseAiSelection] = useState(false);
+  const [useAiSelection, setUseAiSelection] = useState(true);
 
   const handleExperienceToggle = (experienceId: number) => {
     setSelectedExperiences(prev => 

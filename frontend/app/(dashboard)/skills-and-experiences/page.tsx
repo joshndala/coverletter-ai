@@ -1,8 +1,11 @@
+"use client";
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlusCircle, Brain, Users, Briefcase, BarChart, Lightbulb, Pencil, Globe, Zap, LucideIcon, FolderGit2 } from "lucide-react";
+import AddExperience from '../app-components/AddExperience';
 
 interface Skill {
   name: string;
@@ -198,10 +201,17 @@ const SkillsAndExperience: React.FC = () => {
               Showcase your skills and professional journey
             </p>
           </div>
-          <Button className="bg-primary hover:bg-primary/90 text-white shadow-md hover:shadow-lg transition-all">
-            <PlusCircle className="w-4 h-4 mr-2" />
-            Add New
-          </Button>
+          <AddExperience onSubmit={async (experience) => {
+            // Here you would implement the logic to save the experience
+            // For example:
+            try {
+              // Add to your backend
+              // Update local state
+              // Show success message
+            } catch (error) {
+              // Handle error
+            }
+          }} />
         </div>
 
         {/* Tabs */}

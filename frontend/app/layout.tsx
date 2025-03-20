@@ -1,26 +1,27 @@
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import type React from "react" // Import React
+import Navbar from "./components/Navbar"
 
+// Font configuration
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "AI Cover Letter Generator",
-  description: "Generate personalized cover letters using AI",
-  icons: {
-    icon: "/favicon.png",
-  },
+  title: "CoverForMe",
+  description: "Generate tailored cover letters for your job applications",
 }
 
 export default function RootLayout({
   children,
-}: {
-  children: React.ReactNode
-}) {
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  // This will be used in client components only
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        {children}
+      </body>
     </html>
   )
 }

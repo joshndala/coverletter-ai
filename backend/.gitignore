@@ -1,5 +1,6 @@
 .env
 coverletter_ai_env/
+config/firebase/firebase-service-account.json
 
 # macOS System Files
 .DS_Store

@@ -1,12 +1,7 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
-from typing import List
 from database import engine, get_db
-import models, schemas
-from models.request_models import CoverLetterRequest 
-from services.cover_letter_service import generate_cover_letter
-import boto3
+from routers import cover_letters, auth
 
 app = FastAPI()
 
@@ -19,16 +14,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize AWS Bedrock client
-bedrock = boto3.client(
-    service_name='bedrock-runtime',
-    region_name='us-east-1' 
-)
-
-@app.post("/api/generate-cover-letter")
-async def create_cover_letter(request: CoverLetterRequest):
-    try:
-        response = await generate_cover_letter(request, bedrock)
-        return response  
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# Include routers
+app.include_router(cover_letters.router, prefix="/api")
+app.include_router(auth.router, prefix="/api")

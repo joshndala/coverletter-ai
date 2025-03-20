@@ -10,3 +10,5 @@ alembic==1.13.1
 pydantic-settings
 "langchain[all]"
 pgvector
+"passlib[bcrypt]"
+firebase-admin

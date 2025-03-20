@@ -6,53 +6,71 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import Link from "next/link"
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth"
-import { auth } from "../../lib/firebase"
 import { useRouter } from "next/navigation"
 import { toast } from "@/components/ui/use-toast"
 import { FcGoogle } from "react-icons/fc"
 import Image from "next/image"
+import { signInWithEmail, signInWithGoogle } from "@/lib/firebase" // Import from your existing file
 
 export default function Login() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!email || !password) {
+      toast({
+        title: "Missing information",
+        description: "Please enter both email and password.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsLoading(true)
     try {
-      await signInWithEmailAndPassword(auth, email, password)
+      const userData = await signInWithEmail(email, password)
+      
       toast({
         title: "Login Successful",
-        description: "Welcome back!",
+        description: `Welcome back, ${userData.full_name || 'User'}!`,
       })
       router.push("/dashboard")
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error)
       toast({
         title: "Login Failed",
-        description: "Please check your credentials and try again.",
+        description: error.message || "Please check your credentials and try again.",
         variant: "destructive",
       })
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const handleGoogleLogin = async () => {
-    const provider = new GoogleAuthProvider()
+  const handleGoogleLogin = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
     try {
-      await signInWithPopup(auth, provider)
+      // Using your existing Google auth function
+      const userData = await signInWithGoogle()
+      
       toast({
         title: "Login Successful",
-        description: "Welcome back!",
+        description: `Welcome back, ${userData.full_name || 'User'}!`,
       })
       router.push("/dashboard")
-    } catch (error) {
+    } catch (error: any) {
       console.error("Google login error:", error)
       toast({
         title: "Login Failed",
-        description: "An error occurred during Google login. Please try again.",
+        description: error.message || "An error occurred during Google login. Please try again.",
         variant: "destructive",
       })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -86,6 +104,7 @@ export default function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="bg-white text-primary placeholder:text-primary/50"
+                  disabled={isLoading}
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
@@ -97,18 +116,33 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="bg-white text-primary placeholder:text-primary/50"
+                  disabled={isLoading}
                 />
+              </div>
+              <div className="flex flex-col space-y-2 pt-4">
+                <Button 
+                  type="submit"
+                  variant="outline" 
+                  className="w-full bg-white text-primary" 
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Logging in..." : "Login"}
+                </Button>
+                <Button 
+                  type="button"
+                  variant="outline" 
+                  className="w-full" 
+                  onClick={handleGoogleLogin}
+                  disabled={isLoading}
+                >
+                  <FcGoogle className="mr-2" /> 
+                  {isLoading ? "Logging in..." : "Login with Google"}
+                </Button>
               </div>
             </div>
           </form>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-2">
-          <Button variant="outline" className="w-full bg-white text-primary" onClick={handleLogin}>
-            Login
-          </Button>
-          <Button variant="outline" className="w-full" onClick={handleGoogleLogin}>
-            <FcGoogle className="mr-2" /> Login with Google
-          </Button>
+        <CardFooter className="flex flex-col">
           <p className="text-sm text-center text-secondary">
             Don't have an account?{" "}
             <Link href="/register" className="text-blue-600 hover:underline">
@@ -120,4 +154,3 @@ export default function Login() {
     </div>
   )
 }
-

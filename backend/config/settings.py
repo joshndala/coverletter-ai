@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     AWS_REGION: str = os.getenv("AWS_REGION", "us-east-1")
     DATABASE_URL: str = os.getenv("DATABASE_URL")
     CORS_ORIGINS: list = ["http://localhost:3000"]
+    FIREBASE_SERVICE_ACCOUNT_PATH: str = os.environ.get("FIREBASE_SERVICE_ACCOUNT_PATH")
 
     class Config:
         env_file = ".env"
