@@ -40,7 +40,7 @@ const Sidebar = () => {
   `;
 
   return (
-    <div className="w-64 bg-primary min-h-screen p-4 flex flex-col">
+    <div className="fixed top-0 left-0 h-screen w-64 bg-primary p-4 flex flex-col overflow-y-auto z-40 shadow-lg">
       {/* Logo at the top */}
       <div className="mb-8 flex justify-center">
         <Image
@@ -52,7 +52,7 @@ const Sidebar = () => {
         />
       </div>
 
-      <nav className="space-y-3 flex-1">
+      <nav className="space-y-3 flex-1 overflow-y-auto">
         {navigationItems.map((item) => (
           <Link 
             key={item.href}
@@ -67,7 +67,7 @@ const Sidebar = () => {
 
       {/* Logout button */}
       <button
-        className="flex items-center p-3 w-full text-primary-foreground hover:bg-secondary/90 hover:text-secondary-foreground rounded"
+        className="flex items-center p-3 w-full text-primary-foreground hover:bg-secondary/90 hover:text-secondary-foreground rounded mt-4"
         onClick={() => {
           // Add logout logic here
           console.log('Logout clicked');
