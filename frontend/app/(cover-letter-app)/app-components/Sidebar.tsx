@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { LogOut, LayoutDashboard, UserCircle, FileText } from 'lucide-react';
+import { LogOut, LayoutDashboard, UserCircle, FileText, Files } from 'lucide-react';
 
 const navigationItems = [
   {
@@ -17,7 +17,12 @@ const navigationItems = [
     icon: UserCircle
   },
   {
-    label: 'Generate Cover Letter',
+    label: 'My Cover Letters',
+    href: '/my-cover-letters',
+    icon: Files
+  },
+  {
+    label: 'Create Cover Letter',
     href: '/generate-cover-letter',
     icon: FileText
   }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { FileText, Briefcase, Edit, Check, Target } from "lucide-react";
+import { FileText, Briefcase, Edit, Check, Target, Search } from "lucide-react";
 
 export const metadata = {
   title: "How It Works - CoverForMe",
@@ -23,18 +23,24 @@ const HowItWorksPage = () => {
     },
     {
       id: 3,
+      title: "Company Research",
+      description: "Our AI automatically searches the web to gather company information, mission, values, and recent news to better align your cover letter with the company culture.",
+      icon: Search,
+    },
+    {
+      id: 4,
       title: "AI Selects Relevant Experience",
       description: "Our AI analyzes the job requirements and selects your most relevant experiences and skills.",
       icon: Target,
     },
     {
-      id: 4,
+      id: 5,
       title: "Generate Your Cover Letter",
       description: "With one click, we create a personalized cover letter tailored to the specific job.",
       icon: Edit,
     },
     {
-      id: 5,
+      id: 6,
       title: "Review and Download",
       description: "Edit if needed, then copy or download your cover letter for your application.",
       icon: Check,

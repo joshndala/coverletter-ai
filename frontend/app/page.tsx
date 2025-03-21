@@ -2,7 +2,7 @@ import React from 'react';
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { FileText, Briefcase, CheckCircle, ArrowRight } from "lucide-react";
+import { FileText, Briefcase, CheckCircle, ArrowRight, Search } from "lucide-react";
 import Navbar from './components/Navbar';
 
 export default function Home() {
@@ -59,11 +59,11 @@ export default function Home() {
                 <Card className="shadow-md hover:shadow-lg transition-all duration-300">
                   <CardContent className="p-6">
                     <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-6">
-                      <Briefcase className="h-6 w-6 text-primary" />
+                      <Search className="h-6 w-6 text-primary" />
                     </div>
-                    <h3 className="text-xl font-semibold mb-3">Save Time</h3>
+                    <h3 className="text-xl font-semibold mb-3">Company Research</h3>
                     <p className="text-gray-600">
-                      Create professional cover letters in seconds, not hours, letting you apply to more jobs faster.
+                      Automatically gathers company information, mission, and values to create more relevant cover letters.
                     </p>
                   </CardContent>
                 </Card>
@@ -120,9 +120,9 @@ export default function Home() {
                   <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                     <span className="text-xl font-bold text-primary">3</span>
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">Generate & Download</h3>
+                  <h3 className="text-xl font-semibold mb-2">AI Research & Generate</h3>
                   <p className="text-gray-600">
-                    Get your personalized cover letter instantly
+                    Our AI researches the company and creates your personalized cover letter
                   </p>
                 </div>
               </div>
