@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,16 +13,19 @@ import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { MinusCircle, PlusCircle } from "lucide-react";
 
 interface AddExperienceProps {
+  experienceType?: 'work' | 'project';
   onSubmit: (experience: WorkExperience | ProjectExperience) => void;
+  onCancel: () => void;
+  editExperience?: WorkExperience | ProjectExperience;
 }
 
 interface BaseExperience {
   id?: number;
   title: string;
   description: string;
-  highlights: string[];
 }
 
 interface WorkExperience extends BaseExperience {
@@ -42,116 +45,128 @@ interface ProjectExperience extends BaseExperience {
   link?: string;
 }
 
-const AddExperience: React.FC<AddExperienceProps> = ({ onSubmit }) => {
-  const [open, setOpen] = React.useState(false);
-  const [experienceType, setExperienceType] = React.useState<'work' | 'project'>('work');
+export default function AddExperience({ experienceType = 'work', onSubmit, onCancel, editExperience }: AddExperienceProps) {
+  // Form state
+  const [title, setTitle] = useState(editExperience?.title || '');
+  const [description, setDescription] = useState(editExperience?.description || '');
+
+  // Work experience state
+  const [company, setCompany] = useState(editExperience?.type === 'work' ? (editExperience as WorkExperience).company || '' : '');
+  const [location, setLocation] = useState(editExperience?.type === 'work' ? (editExperience as WorkExperience).location || '' : '');
+  const [employmentType, setEmploymentType] = useState<EmploymentType>(
+    editExperience?.type === 'work' 
+      ? (editExperience as WorkExperience).employmentType || 'full-time'
+      : 'full-time'
+  );
+  const [startDate, setStartDate] = useState<Date | null>(
+    editExperience?.type === 'work' && (editExperience as WorkExperience).startDate
+      ? new Date((editExperience as WorkExperience).startDate)
+      : null
+  );
+  const [endDate, setEndDate] = useState<Date | null>(
+    editExperience?.type === 'work' && (editExperience as WorkExperience).endDate
+      ? new Date((editExperience as WorkExperience).endDate)
+      : null
+  );
+  const [currentlyWorking, setCurrentlyWorking] = useState(
+    editExperience?.type === 'work' && !(editExperience as WorkExperience).endDate
+  );
+
+  // Project experience state
+  const [technologies, setTechnologies] = useState(
+    editExperience?.type === 'project' ? (editExperience as ProjectExperience).technologies || '' : ''
+  );
+  const [projectType, setProjectType] = useState<ProjectType>(
+    editExperience?.type === 'project' 
+      ? (editExperience as ProjectExperience).projectType || 'personal'
+      : 'personal'
+  );
+  const [projectDate, setProjectDate] = useState<Date | null>(
+    editExperience?.type === 'project' && (editExperience as ProjectExperience).date
+      ? new Date((editExperience as ProjectExperience).date)
+      : null
+  );
+  const [projectLink, setProjectLink] = useState(
+    editExperience?.type === 'project' ? (editExperience as ProjectExperience).link || '' : ''
+  );
+
+  // Controlled inputs
+  const handleCompanyChange = (e: React.ChangeEvent<HTMLInputElement>) => setCompany(e.target.value);
+  const handleLocationChange = (e: React.ChangeEvent<HTMLInputElement>) => setLocation(e.target.value);
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value);
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value);
+  const handleTechnologiesChange = (e: React.ChangeEvent<HTMLInputElement>) => setTechnologies(e.target.value);
+  const handleProjectLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => setProjectLink(e.target.value);
+  // Skills removed as they're not implemented in backend
+
+  // Handle checkbox
+  const handleCurrentlyWorkingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCurrentlyWorking(e.target.checked);
+    if (e.target.checked) {
+      setEndDate(null);
+    }
+  };
   
-  // Shared fields
-  const [title, setTitle] = React.useState('');
-  const [description, setDescription] = React.useState('');
-  const [currentHighlight, setCurrentHighlight] = React.useState('');
-  const [highlights, setHighlights] = React.useState<string[]>([]);
+  // Handle selects
+  const handleEmploymentTypeChange = (value: EmploymentType) => setEmploymentType(value);
+  const handleProjectTypeChange = (value: ProjectType) => setProjectType(value);
   
-  // Work experience fields
-  const [company, setCompany] = React.useState('');
-  const [startDate, setStartDate] = React.useState<Date>();
-  const [endDate, setEndDate] = React.useState<Date>();
-  const [location, setLocation] = React.useState('');
-  const [employmentType, setEmploymentType] = React.useState('');
-  
-  // Project fields
-  const [projectDate, setProjectDate] = React.useState<Date>();
-  const [projectType, setProjectType] = React.useState<'individual' | 'group'>('individual');
-  const [currentTechnology, setCurrentTechnology] = React.useState('');
-  const [technologies, setTechnologies] = React.useState<string[]>([]);
-  const [projectLink, setProjectLink] = React.useState('');
+  // Handle dates
+  const handleStartDateChange = (date: Date | null) => setStartDate(date);
+  const handleEndDateChange = (date: Date | null) => setEndDate(date);
+  const handleProjectDateChange = (date: Date | null) => setProjectDate(date);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (experienceType === 'work' && !startDate) return;
-    if (experienceType === 'project' && !projectDate) return;
-
     if (experienceType === 'work') {
-      onSubmit({
+      const workExperience: WorkExperience = {
+        id: editExperience?.id,
         type: 'work',
         title,
+        description,
         company,
-        startDate,
-        endDate: endDate || null,
         location,
         employmentType,
-        description,
-        highlights,
-      } as WorkExperience);
+        startDate: startDate?.toISOString().split('T')[0],
+        endDate: currentlyWorking ? undefined : endDate?.toISOString().split('T')[0],
+      };
+      onSubmit(workExperience);
     } else {
-      onSubmit({
+      const projectExperience: ProjectExperience = {
+        id: editExperience?.id,
         type: 'project',
         title,
+        description,
         technologies,
         projectType,
-        date: projectDate!,
-        link: projectLink || undefined,
-        description,
-        highlights,
-      } as ProjectExperience);
+        date: projectDate?.toISOString().split('T')[0],
+        link: projectLink,
+      };
+      onSubmit(projectExperience);
     }
-
+    
     // Reset form
     resetForm();
-    setOpen(false);
   };
 
   const resetForm = () => {
     setTitle('');
     setDescription('');
-    setHighlights([]);
-    setCurrentHighlight('');
-    
-    // Reset work fields
-    setCompany('');
-    setStartDate(undefined);
-    setEndDate(undefined);
-    setLocation('');
-    setEmploymentType('');
-    
-    // Reset project fields
-    setProjectDate(undefined);
-    setProjectType('individual');
     setTechnologies([]);
-    setCurrentTechnology('');
+    setProjectDate(null);
     setProjectLink('');
-  };
-
-  const addHighlight = () => {
-    if (currentHighlight.trim()) {
-      setHighlights([...highlights, currentHighlight.trim()]);
-      setCurrentHighlight('');
-    }
-  };
-
-  const removeHighlight = (index: number) => {
-    setHighlights(highlights.filter((_, i) => i !== index));
-  };
-
-  const addTechnology = () => {
-    if (currentTechnology.trim()) {
-      setTechnologies([...technologies, currentTechnology.trim()]);
-      setCurrentTechnology('');
-    }
-  };
-
-  const removeTechnology = (index: number) => {
-    setTechnologies(technologies.filter((_, i) => i !== index));
+    setProjectType('personal');
+    setCompany('');
+    setLocation('');
+    setEmploymentType('full-time');
+    setStartDate(null);
+    setEndDate(null);
+    setCurrentlyWorking(true);
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="bg-primary hover:bg-primary/90 text-white shadow-md hover:shadow-lg transition-all">
-          Add New Experience
-        </Button>
-      </DialogTrigger>
+    <Dialog open={true} onOpenChange={onCancel}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-primary">
@@ -171,7 +186,7 @@ const AddExperience: React.FC<AddExperienceProps> = ({ onSubmit }) => {
               <Input
                 id="title"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={handleTitleChange}
                 placeholder={experienceType === 'work' ? "e.g. Senior Developer" : "e.g. Portfolio Website"}
                 required
               />
@@ -184,7 +199,7 @@ const AddExperience: React.FC<AddExperienceProps> = ({ onSubmit }) => {
                   <Input
                     id="company"
                     value={company}
-                    onChange={(e) => setCompany(e.target.value)}
+                    onChange={handleCompanyChange}
                     placeholder="e.g. Tech Corp"
                     required
                   />
@@ -194,7 +209,7 @@ const AddExperience: React.FC<AddExperienceProps> = ({ onSubmit }) => {
                   <Input
                     id="employmentType"
                     value={employmentType}
-                    onChange={(e) => setEmploymentType(e.target.value)}
+                    onChange={(e) => handleEmploymentTypeChange(e.target.value as EmploymentType)}
                     placeholder="e.g. Full-time"
                     required
                   />
@@ -221,7 +236,7 @@ const AddExperience: React.FC<AddExperienceProps> = ({ onSubmit }) => {
                       <Calendar
                         mode="single"
                         selected={startDate}
-                        onSelect={setStartDate}
+                        onSelect={handleStartDateChange}
                         initialFocus
                       />
                     </PopoverContent>
@@ -246,7 +261,7 @@ const AddExperience: React.FC<AddExperienceProps> = ({ onSubmit }) => {
                       <Calendar
                         mode="single"
                         selected={endDate}
-                        onSelect={setEndDate}
+                        onSelect={handleEndDateChange}
                         initialFocus
                       />
                     </PopoverContent>
@@ -259,7 +274,7 @@ const AddExperience: React.FC<AddExperienceProps> = ({ onSubmit }) => {
                 <Input
                   id="location"
                   value={location}
-                  onChange={(e) => setLocation(e.target.value)}
+                  onChange={handleLocationChange}
                   placeholder="e.g. New York, NY"
                   required
                 />
@@ -270,7 +285,7 @@ const AddExperience: React.FC<AddExperienceProps> = ({ onSubmit }) => {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>Project Type</Label>
-                  <RadioGroup value={projectType} onValueChange={(value) => setProjectType(value as 'individual' | 'group')}>
+                  <RadioGroup value={projectType} onValueChange={(value) => handleProjectTypeChange(value as ProjectType)}>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="individual" id="individual" />
                       <Label htmlFor="individual">Individual Project</Label>
@@ -301,7 +316,7 @@ const AddExperience: React.FC<AddExperienceProps> = ({ onSubmit }) => {
                       <Calendar
                         mode="single"
                         selected={projectDate}
-                        onSelect={setProjectDate}
+                        onSelect={handleProjectDateChange}
                         initialFocus
                       />
                     </PopoverContent>
@@ -312,42 +327,10 @@ const AddExperience: React.FC<AddExperienceProps> = ({ onSubmit }) => {
                   <Label>Technologies Used</Label>
                   <div className="flex gap-2">
                     <Input
-                      value={currentTechnology}
-                      onChange={(e) => setCurrentTechnology(e.target.value)}
+                      value={technologies}
+                      onChange={handleTechnologiesChange}
                       placeholder="e.g. React, Node.js"
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          addTechnology();
-                        }
-                      }}
                     />
-                    <Button
-                      type="button"
-                      onClick={addTechnology}
-                      className="bg-primary hover:bg-primary/90"
-                    >
-                      Add
-                    </Button>
-                  </div>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {technologies.map((tech, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center bg-primary/10 rounded-full px-3 py-1"
-                      >
-                        <span className="text-primary text-sm">{tech}</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeTechnology(index)}
-                          className="h-5 w-5 p-0 ml-1 text-primary hover:text-primary/90"
-                        >
-                          ×
-                        </Button>
-                      </div>
-                    ))}
                   </div>
                 </div>
 
@@ -356,7 +339,7 @@ const AddExperience: React.FC<AddExperienceProps> = ({ onSubmit }) => {
                   <Input
                     id="projectLink"
                     value={projectLink}
-                    onChange={(e) => setProjectLink(e.target.value)}
+                    onChange={handleProjectLinkChange}
                     placeholder="e.g. https://github.com/username/project"
                   />
                 </div>
@@ -369,60 +352,17 @@ const AddExperience: React.FC<AddExperienceProps> = ({ onSubmit }) => {
               <Textarea
                 id="description"
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={handleDescriptionChange}
                 placeholder="Brief description..."
                 className="min-h-[100px]"
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Highlights</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={currentHighlight}
-                  onChange={(e) => setCurrentHighlight(e.target.value)}
-                  placeholder="Add key achievements..."
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addHighlight();
-                    }
-                  }}
-                />
-                <Button
-                  type="button"
-                  onClick={addHighlight}
-                  className="bg-primary hover:bg-primary/90"
-                >
-                  Add
-                </Button>
-              </div>
-              <ul className="space-y-2 mt-2">
-                {highlights.map((highlight, index) => (
-                  <li
-                    key={index}
-                    className="flex items-center justify-between bg-secondary/10 p-2 rounded-md"
-                  >
-                    <span>{highlight}</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeHighlight(index)}
-                      className="text-destructive hover:text-destructive/90"
-                    >
-                      Remove
-                    </Button>
-                  </li>
-                ))}
-              </ul>
             </div>
 
             <div className="flex justify-end space-x-2 pt-4">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setOpen(false)}
+                onClick={onCancel}
               >
                 Cancel
               </Button>
@@ -438,6 +378,4 @@ const AddExperience: React.FC<AddExperienceProps> = ({ onSubmit }) => {
       </DialogContent>
     </Dialog>
   );
-};
-
-export default AddExperience;
+}

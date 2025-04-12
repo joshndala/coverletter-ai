@@ -5,8 +5,11 @@ import {
   createUserWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
-  signOut as firebaseSignOut
+  signOut as firebaseSignOut,
+  onIdTokenChanged
 } from "firebase/auth";
+import { saveAuthToStorage, clearAuthFromStorage } from './sessionStorage';
+import { setAuthCookie, clearAuthCookie } from './cookies';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -82,6 +85,20 @@ export const registerWithBackend = async (firebaseUser: any, additionalData = {}
     }
     
     const userData = await response.json();
+    
+    // Save authentication data to session storage
+    saveAuthToStorage({
+      firebase_id_token: idToken,
+      user: {
+        email: userData.email || firebaseUser.email,
+        full_name: userData.full_name || firebaseUser.displayName || '',
+        firebase_uid: userData.firebase_uid || firebaseUser.uid
+      }
+    });
+    
+    // Set auth cookie for middleware
+    setAuthCookie(true);
+    
     return userData;
   } catch (error) {
     console.error("Backend registration error:", error);
@@ -109,13 +126,25 @@ export const getCurrentUser = async () => {
     if (!response.ok) {
       if (response.status === 401) {
         // Token expired or invalid
-        await firebaseSignOut(auth);
+        await signOut();
         return null;
       }
       throw new Error('Failed to get user data');
     }
     
-    return await response.json();
+    const userData = await response.json();
+    
+    // Update session storage with fresh token and user data
+    saveAuthToStorage({
+      firebase_id_token: idToken,
+      user: {
+        email: userData.email,
+        full_name: userData.full_name || '',
+        firebase_uid: userData.firebase_uid
+      }
+    });
+    
+    return userData;
   } catch (error) {
     console.error("Get current user error:", error);
     return null;
@@ -125,6 +154,13 @@ export const getCurrentUser = async () => {
 // Sign out
 export const signOut = async () => {
   try {
+    // Clear session storage first
+    clearAuthFromStorage();
+    
+    // Clear auth cookie
+    clearAuthCookie();
+    
+    // Then sign out from Firebase
     await firebaseSignOut(auth);
     return true;
   } catch (error) {
@@ -139,15 +175,41 @@ export const onAuthStateChanged = (callback: (user: any) => void) => {
     if (firebaseUser) {
       try {
         const userData = await getCurrentUser();
+        setAuthCookie(true);
         callback(userData);
       } catch (error) {
         console.error("Auth state change error:", error);
+        clearAuthCookie();
         callback(null);
       }
     } else {
+      // User signed out
+      clearAuthFromStorage();
+      clearAuthCookie();
       callback(null);
     }
   });
 };
+
+// Set up token refresh listener
+// This will update the session storage whenever the token refreshes
+if (typeof window !== 'undefined') {
+  onIdTokenChanged(auth, async (user) => {
+    if (user) {
+      try {
+        const idToken = await user.getIdToken();
+        const currentStorage = JSON.parse(localStorage.getItem('coverforme_auth') || '{}');
+        if (currentStorage.user) {
+          saveAuthToStorage({
+            ...currentStorage,
+            firebase_id_token: idToken,
+          });
+        }
+      } catch (error) {
+        console.error("Token refresh error:", error);
+      }
+    }
+  });
+}
 
 export { auth };

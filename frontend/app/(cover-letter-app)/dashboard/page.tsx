@@ -1,3 +1,5 @@
+"use client";
+
 import React from 'react';
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -14,6 +16,7 @@ import {
   User,
   Calendar
 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 const MOCK_COVER_LETTERS = [
   {
@@ -58,6 +61,7 @@ const MOCK_ACTIVITY = [
 const Dashboard = () => {
   const coverLetters = MOCK_COVER_LETTERS;
   const activities = MOCK_ACTIVITY;
+  const { user } = useAuth();
   
   const renderActivityItem = (activity: any) => {
     const date = new Date(activity.date);
@@ -118,7 +122,7 @@ const Dashboard = () => {
         {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-3 text-primary">
-            Welcome Back
+            Welcome Back, {user?.full_name?.split(' ')[0] || 'User'}
           </h1>
           <p className="text-gray-600">
             Manage your professional profile and create compelling cover letters

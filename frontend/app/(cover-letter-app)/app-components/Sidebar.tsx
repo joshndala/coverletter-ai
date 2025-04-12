@@ -2,8 +2,10 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { LogOut, LayoutDashboard, UserCircle, FileText, Files } from 'lucide-react';
+import { useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
 
 const navigationItems = [
   {
@@ -30,6 +32,9 @@ const navigationItems = [
 
 const Sidebar = () => {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { signOut, user } = useAuth();
 
   const linkClass = (path: string) => `
     block p-3 rounded flex items-center
@@ -38,6 +43,18 @@ const Sidebar = () => {
       : 'text-primary-foreground hover:bg-secondary/90 hover:text-secondary-foreground'
     }
   `;
+
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      await signOut();
+      router.push('/');
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   return (
     <div className="fixed top-0 left-0 h-screen w-64 bg-primary p-4 flex flex-col overflow-y-auto z-40 shadow-lg">
@@ -68,13 +85,11 @@ const Sidebar = () => {
       {/* Logout button */}
       <button
         className="flex items-center p-3 w-full text-primary-foreground hover:bg-secondary/90 hover:text-secondary-foreground rounded mt-4"
-        onClick={() => {
-          // Add logout logic here
-          console.log('Logout clicked');
-        }}
+        onClick={handleLogout}
+        disabled={isLoggingOut}
       >
         <LogOut className="mr-2 h-4 w-4" />
-        <span>Logout</span>
+        <span>{isLoggingOut ? "Logging out..." : "Logout"}</span>
       </button>
     </div>
   );

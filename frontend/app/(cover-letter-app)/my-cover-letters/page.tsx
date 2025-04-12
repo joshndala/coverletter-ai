@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,77 +19,123 @@ import {
   Copy
 } from "lucide-react";
 import Link from "next/link";
-
-// Mock data - would normally come from an API/database
-const MOCK_COVER_LETTERS = [
-  {
-    id: 1,
-    company: "Tech Giants Inc",
-    position: "Senior Frontend Developer",
-    createdAt: "2024-02-05",
-    updatedAt: "2024-02-05",
-    content: "Dear Hiring Manager, I am writing to express my interest in the Senior Frontend Developer position at Tech Giants Inc..."
-  },
-  {
-    id: 2,
-    company: "Startup Innovators",
-    position: "Full Stack Engineer",
-    createdAt: "2024-02-03",
-    updatedAt: "2024-02-04",
-    content: "Dear Hiring Team, I am excited to apply for the Full Stack Engineer role at Startup Innovators..."
-  },
-  {
-    id: 3,
-    company: "Digital Solutions Co",
-    position: "UI/UX Designer",
-    createdAt: "2024-01-28",
-    updatedAt: "2024-01-30",
-    content: "Dear Hiring Manager, I am applying for the UI/UX Designer position at Digital Solutions Co..."
-  },
-  {
-    id: 4,
-    company: "Global Tech Partners",
-    position: "JavaScript Developer",
-    createdAt: "2024-01-20",
-    updatedAt: "2024-01-20",
-    content: "Dear Recruitment Team, I would like to apply for the JavaScript Developer position at Global Tech Partners..."
-  },
-  {
-    id: 5,
-    company: "Innovative Software Inc",
-    position: "Frontend Architect",
-    createdAt: "2024-01-15",
-    updatedAt: "2024-01-18",
-    content: "Dear Hiring Manager, I am writing to express my interest in the Frontend Architect position at Innovative Software Inc..."
-  }
-];
+import { CoverLetter, getUserCoverLetters, deleteCoverLetter } from '../api/cover-letter';
+import { toast } from '@/components/ui/use-toast';
+import { format } from 'date-fns';
 
 const MyCoverLettersPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('newest');
+  const [coverLetters, setCoverLetters] = useState<CoverLetter[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Fetch cover letters on component mount
+  useEffect(() => {
+    const fetchCoverLetters = async () => {
+      try {
+        setIsLoading(true);
+        const letters = await getUserCoverLetters();
+        setCoverLetters(letters);
+        setError(null);
+      } catch (err: any) {
+        console.error('Failed to fetch cover letters:', err);
+        setError(`Failed to load cover letters: ${err.message || 'Unknown error'}`);
+        toast({
+          title: 'Error',
+          description: `Failed to load cover letters: ${err.message || 'Unknown error'}`,
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchCoverLetters();
+  }, []);
+  
+  // Handle deleting a cover letter
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this cover letter?')) {
+      return;
+    }
+    
+    try {
+      await deleteCoverLetter(id);
+      setCoverLetters(coverLetters.filter(letter => letter.id !== id));
+      toast({
+        title: 'Success',
+        description: 'Cover letter deleted successfully',
+      });
+    } catch (err: any) {
+      console.error('Failed to delete cover letter:', err);
+      toast({
+        title: 'Error',
+        description: `Failed to delete cover letter: ${err.message || 'Unknown error'}`,
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  // Copy cover letter to clipboard
+  const handleCopy = (content: string | null | undefined) => {
+    if (!content) {
+      toast({
+        title: 'Error',
+        description: 'No content to copy',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    navigator.clipboard.writeText(content).then(() => {
+      toast({
+        title: 'Success',
+        description: 'Cover letter copied to clipboard',
+      });
+    }).catch((err) => {
+      console.error('Failed to copy text:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to copy to clipboard',
+        variant: 'destructive',
+      });
+    });
+  };
+  
+  // Format date for display
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return 'Unknown date';
+    try {
+      return format(new Date(dateString), 'MMM d, yyyy');
+    } catch (err) {
+      return dateString;
+    }
+  };
   
   // Search and sort logic
-  const filteredCoverLetters = MOCK_COVER_LETTERS
+  const filteredCoverLetters = coverLetters
     .filter(letter => {
       const searchLower = searchQuery.toLowerCase();
       return (
-        letter.company.toLowerCase().includes(searchLower) ||
-        letter.position.toLowerCase().includes(searchLower)
+        letter.company_name.toLowerCase().includes(searchLower) ||
+        (letter.status && letter.status.toLowerCase().includes(searchLower))
       );
     })
     .sort((a, b) => {
-      const dateA = new Date(sortBy === 'newest' ? a.updatedAt : a.createdAt);
-      const dateB = new Date(sortBy === 'newest' ? b.updatedAt : b.createdAt);
+      const dateA = new Date(sortBy === 'newest' ? a.updated_at || a.created_at || '' : a.created_at || '');
+      const dateB = new Date(sortBy === 'newest' ? b.updated_at || b.created_at || '' : b.created_at || '');
       
       if (sortBy === 'newest' || sortBy === 'oldest') {
         return sortBy === 'newest' ? dateB.getTime() - dateA.getTime() : dateA.getTime() - dateB.getTime();
       }
       
       if (sortBy === 'company') {
-        return a.company.localeCompare(b.company);
+        return a.company_name.localeCompare(b.company_name);
       }
       
-      return a.position.localeCompare(b.position);
+      // Default sort by company
+      return a.company_name.localeCompare(b.company_name);
     });
   
   return (
@@ -109,7 +155,7 @@ const MyCoverLettersPage = () => {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="Search by company or position..."
+                  placeholder="Search by company..."
                   className="pl-10"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -127,7 +173,6 @@ const MyCoverLettersPage = () => {
                     <SelectItem value="newest">Newest First</SelectItem>
                     <SelectItem value="oldest">Oldest First</SelectItem>
                     <SelectItem value="company">Company</SelectItem>
-                    <SelectItem value="position">Position</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -141,14 +186,44 @@ const MyCoverLettersPage = () => {
           </CardContent>
         </Card>
         
+        {/* Loading state */}
+        {isLoading && (
+          <Card className="shadow-md">
+            <CardContent className="p-12 text-center">
+              <div className="animate-spin mx-auto w-8 h-8 border-4 border-primary border-t-transparent rounded-full mb-4"></div>
+              <p className="text-gray-500">Loading your cover letters...</p>
+            </CardContent>
+          </Card>
+        )}
+        
+        {/* Error state */}
+        {error && !isLoading && (
+          <Card className="shadow-md">
+            <CardContent className="p-12 text-center">
+              <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <FileText className="h-8 w-8 text-red-500" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Error Loading Cover Letters</h3>
+              <p className="text-gray-500 mb-6 max-w-md mx-auto">
+                {error}
+              </p>
+              <Button onClick={() => window.location.reload()} className="bg-primary hover:bg-primary/90">
+                Try Again
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+        
         {/* Results count */}
-        <div className="mb-4 text-sm text-gray-500">
-          Showing {filteredCoverLetters.length} cover {filteredCoverLetters.length === 1 ? 'letter' : 'letters'}
-        </div>
+        {!isLoading && !error && (
+          <div className="mb-4 text-sm text-gray-500">
+            Showing {filteredCoverLetters.length} cover {filteredCoverLetters.length === 1 ? 'letter' : 'letters'}
+          </div>
+        )}
         
         {/* Cover letters list */}
         <div className="space-y-4">
-          {filteredCoverLetters.length === 0 ? (
+          {!isLoading && !error && filteredCoverLetters.length === 0 ? (
             <Card className="shadow-md">
               <CardContent className="p-12 text-center">
                 <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
@@ -167,35 +242,50 @@ const MyCoverLettersPage = () => {
               </CardContent>
             </Card>
           ) : (
-            filteredCoverLetters.map((letter) => (
+            !isLoading && !error && filteredCoverLetters.map((letter) => (
               <Card key={letter.id} className="shadow-md hover:shadow-lg transition-all duration-300">
                 <CardContent className="p-6">
                   <div className="flex flex-col md:flex-row justify-between">
                     <div className="space-y-2 mb-4 md:mb-0">
-                      <h3 className="text-xl font-semibold text-primary">
-                        {letter.position}
-                      </h3>
+                      <div className="flex items-center">
+                        <h3 className="text-xl font-semibold text-primary">
+                          {letter.company_name}
+                        </h3>
+                        {letter.status && (
+                          <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
+                            letter.status === 'completed' ? 'bg-green-100 text-green-800' : 
+                            letter.status === 'draft' ? 'bg-yellow-100 text-yellow-800' : 
+                            'bg-blue-100 text-blue-800'
+                          }`}>
+                            {letter.status}
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center text-gray-500 text-sm space-x-4">
                         <div className="flex items-center">
-                          <Building className="h-4 w-4 mr-1.5" />
-                          <span>{letter.company}</span>
-                        </div>
-                        <div className="flex items-center">
                           <Calendar className="h-4 w-4 mr-1.5" />
-                          <span>Updated {new Date(letter.updatedAt).toLocaleDateString()}</span>
+                          <span>Updated {formatDate(letter.updated_at || letter.created_at)}</span>
                         </div>
                       </div>
                       <p className="text-gray-600 text-sm mt-3 line-clamp-2">
-                        {letter.content.substring(0, 120)}...
+                        {letter.generated_content 
+                          ? letter.generated_content.substring(0, 120) + '...' 
+                          : 'No content generated yet. Click "View" to add content.'}
                       </p>
                     </div>
                     <div className="flex flex-row md:flex-col justify-end space-x-2 md:space-x-0 md:space-y-2">
-                      <Link href={`/cover-letters/${letter.id}`}>
+                      <Link href={`/cover-letter/${letter.id}`}>
                         <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary hover:text-white w-full">
                           View
                         </Button>
                       </Link>
-                      <Button variant="outline" size="sm" className="border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white"
+                        onClick={() => handleCopy(letter.generated_content)}
+                        disabled={!letter.generated_content}
+                      >
                         <Copy className="h-3.5 w-3.5 mr-1.5" />
                         Copy
                       </Button>
@@ -203,7 +293,12 @@ const MyCoverLettersPage = () => {
                         <Download className="h-3.5 w-3.5 mr-1.5" />
                         Export
                       </Button>
-                      <Button variant="outline" size="sm" className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+                        onClick={() => handleDelete(letter.id)}
+                      >
                         <Trash2 className="h-3.5 w-3.5 mr-1.5" />
                         Delete
                       </Button>
@@ -214,15 +309,6 @@ const MyCoverLettersPage = () => {
             ))
           )}
         </div>
-        
-        {/* Pagination or load more (simplified for now) */}
-        {filteredCoverLetters.length > 0 && (
-          <div className="mt-8 flex justify-center">
-            <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white">
-              Load More
-            </Button>
-          </div>
-        )}
       </div>
     </div>
   );

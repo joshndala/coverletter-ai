@@ -10,6 +10,7 @@ import logging
 
 # Import Firebase for authentication
 from utils.firebase import firebase_auth
+from config.settings import settings
 
 load_dotenv()
 
@@ -20,11 +21,25 @@ logger = logging.getLogger(__name__)
 # Password hashing for local accounts (if needed)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+# Use settings instead of directly accessing environment variables
+DEV_TEST_TOKEN = "dev_test_token"  # Special token for development mode
+
 async def verify_firebase_token(token: str):
     """Verify Firebase ID token and return user info"""
     try:
         logger.info("Verifying Firebase token")
-        # Verify the Firebase token
+        
+        # Development mode bypass for testing
+        if settings.DEV_MODE and token == DEV_TEST_TOKEN:
+            logger.warning("⚠️ DEVELOPMENT MODE: Bypassing Firebase verification with test token")
+            # Return a mock decoded token with test user information
+            return {
+                "uid": settings.TEST_USER_ID,
+                "email": settings.TEST_USER_EMAIL,
+                "name": settings.TEST_USER_NAME
+            }
+            
+        # Normal production flow - verify the Firebase token
         decoded_token = firebase_auth.verify_id_token(token)
         logger.info(f"Token verified successfully for user: {decoded_token.get('email')}")
         return decoded_token

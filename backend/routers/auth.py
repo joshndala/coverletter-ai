@@ -36,7 +36,7 @@ async def get_current_user(request: Request, db: Session = Depends(get_db)):
             )
         
         token = auth_header.split(' ')[1]
-        logger.info(f"Token received: {token[:10]}...")  # Log first few chars for debugging
+        logger.info(f"Token received") 
         
         # Process the token and get user
         user = await get_or_create_user_from_firebase(db, token)
@@ -58,6 +58,47 @@ async def get_current_user(request: Request, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get user data: {str(e)}"
+        )
+
+# Dependency for other routes
+async def get_current_user_dependency(request: Request, db: Session = Depends(get_db)):
+    """Dependency to get current authenticated user for API routes"""
+    logger.info("Auth dependency called")
+    try:
+        # Get token from header
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            logger.error("Missing or invalid Authorization header")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, 
+                detail="Missing or invalid token"
+            )
+        
+        token = auth_header.split(' ')[1]
+        logger.info(f"Token received in dependency") 
+        
+        # Process the token and get user
+        user = await get_or_create_user_from_firebase(db, token)
+        
+        # Return user data with uid field (important for other services)
+        user_data = {
+            "id": str(user.id),
+            "uid": str(user.id),  # Add this for compatibility
+            "firebase_uid": user.firebase_uid,
+            "email": user.email,
+            "full_name": user.full_name,
+            "is_active": user.is_active
+        }
+        logger.info(f"Current user retrieved in dependency: {user.email}")
+        return user_data
+        
+    except Exception as e:
+        logger.error(f"Error in auth dependency: {str(e)}")
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Authentication failed: {str(e)}"
         )
 
 @router.post("/register")
