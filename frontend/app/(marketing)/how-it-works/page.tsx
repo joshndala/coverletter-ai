@@ -24,19 +24,19 @@ const HowItWorksPage = () => {
     {
       id: 3,
       title: "Company Research",
-      description: "Our AI automatically searches the web to gather company information, mission, values, and recent news to better align your cover letter with the company culture.",
+      description: "The AI automatically searches the web to gather company information, mission, values, and recent news to better align your cover letter with the company culture.",
       icon: Search,
     },
     {
       id: 4,
       title: "AI Selects Relevant Experience",
-      description: "Our AI analyzes the job requirements and selects your most relevant experiences and skills.",
+      description: "The AI analyzes the job requirements and selects your most relevant experiences and skills.",
       icon: Target,
     },
     {
       id: 5,
       title: "Generate Your Cover Letter",
-      description: "With one click, we create a personalized cover letter tailored to the specific job.",
+      description: "With one click, a personalized cover letter is created, tailored to the specific job.",
       icon: Edit,
     },
     {
@@ -56,7 +56,7 @@ const HowItWorksPage = () => {
             How CoverForMe Works
           </h1>
           <p className="text-lg text-gray-600">
-            Create personalized cover letters in minutes with our simple five-step process
+            Create personalized cover letters in minutes with this simple five-step process
           </p>
         </div>
 
@@ -97,7 +97,7 @@ const HowItWorksPage = () => {
                 <div className="space-y-2">
                   <h3 className="font-semibold text-lg">Tailored Content</h3>
                   <p className="text-gray-600">
-                    Our AI matches your experience with job requirements for truly personalized letters.
+                    The AI matches your experience with job requirements for truly personalized letters.
                   </p>
                 </div>
                 <div className="space-y-2">
@@ -126,7 +126,7 @@ const HowItWorksPage = () => {
                 <div>
                   <h3 className="font-semibold text-lg mb-2">Is my information secure?</h3>
                   <p className="text-gray-600">
-                    Yes, we take data privacy seriously. Your information is encrypted and never shared with third parties.
+                    Yes, I take data privacy seriously. Your information is encrypted and never shared with third parties.
                   </p>
                 </div>
                 <div>
@@ -138,13 +138,13 @@ const HowItWorksPage = () => {
                 <div>
                   <h3 className="font-semibold text-lg mb-2">How much does it cost?</h3>
                   <p className="text-gray-600">
-                    We offer both free and premium plans. The free plan allows for a limited number of cover letters per month, while premium plans provide unlimited access.
+                    I offer both free and premium plans. The free plan allows for a limited number of cover letters per month, while premium plans provide unlimited access.
                   </p>
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg mb-2">Can I use the cover letters for any job?</h3>
                   <p className="text-gray-600">
-                    Yes, our AI is trained to generate cover letters for a wide range of industries and positions.
+                    Yes, the AI is trained to generate cover letters for a wide range of industries and positions.
                   </p>
                 </div>
               </div>

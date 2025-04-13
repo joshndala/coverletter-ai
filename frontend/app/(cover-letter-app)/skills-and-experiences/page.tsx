@@ -160,6 +160,18 @@ const MOCK_CERTIFICATIONS: Certification[] = [
   }
 ];
 
+// Helper function to safely format dates
+const formatDate = (dateString: string | null | undefined): string => {
+  if (!dateString) return '';
+  
+  try {
+    return format(new Date(dateString), 'MMM yyyy');
+  } catch (error) {
+    console.error('Error formatting date:', dateString, error);
+    return dateString;
+  }
+};
+
 const ProfessionalExperience: React.FC = () => {
   // State for dialog visibility
   const [isEducationDialogOpen, setIsEducationDialogOpen] = useState(false);
@@ -297,40 +309,56 @@ const ProfessionalExperience: React.FC = () => {
   
   const handleExperienceSubmit = async (experienceData: any) => {
     try {
+      // Validate required date
+      if (!experienceData.startDate) {
+        toast({
+          title: 'Error',
+          description: 'Start date is required',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      console.log('Submitting experience data:', experienceData);
+      
       // Format the data according to our API requirements
       const apiExperienceData = {
         company_name: experienceData.company,
         title: experienceData.title,
-        location: experienceData.location,
+        location: experienceData.location || '',
         start_date: experienceData.startDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
         end_date: experienceData.endDate ? experienceData.endDate.toISOString().split('T')[0] : null,
         is_current: !experienceData.endDate,
-        description: experienceData.description
-        // skills field removed as it's not implemented in backend
+        description: experienceData.description || ''
       };
       
+      console.log('Formatted API data:', apiExperienceData);
+      
+      setIsLoading(true);
       // Call the API to create the experience
       const createdExperience = await createExperience(apiExperienceData);
+      console.log('Experience created successfully:', createdExperience);
       
-      // Add the new experience to the state
-      setApiExperiences(prevExperiences => [...prevExperiences, createdExperience]);
+      // Refresh all experiences from the API to ensure we have the latest data
+      const experiences = await getUserExperiences();
+      setApiExperiences(experiences);
       
       toast({
         title: 'Success',
         description: 'Experience added successfully!',
       });
       
-      // Close the dialog by setting isExperienceDialogOpen to false if it exists
-      if (typeof setIsExperienceDialogOpen === 'function') {
-        setIsExperienceDialogOpen(false);
-      }
-    } catch (error) {
+      // Close the dialog
+      setIsExperienceDialogOpen(false);
+    } catch (error: any) {
       console.error('Failed to create experience:', error);
       toast({
         title: 'Error',
-        description: 'Failed to add experience. Please try again.',
+        description: `Failed to add experience: ${error.message || 'Unknown error'}`,
         variant: 'destructive',
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -669,14 +697,6 @@ const ProfessionalExperience: React.FC = () => {
                 </div>
               </CardHeader>
               <CardContent className="p-6">
-                {/* Display loading state */}
-                {isLoading && (
-                  <div className="flex justify-center items-center p-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-                    <span className="ml-2">Loading experiences...</span>
-                  </div>
-                )}
-
                 {/* Display error message if any */}
                 {error && (
                   <div className="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
@@ -684,19 +704,36 @@ const ProfessionalExperience: React.FC = () => {
                   </div>
                 )}
 
+                {/* Display loading indicator */}
+                {isLoading && (
+                  <div className="flex justify-center items-center py-8">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                  </div>
+                )}
+
                 {/* Display API experiences */}
-                {apiExperiences.length > 0 && (
+                {!isLoading && apiExperiences.length === 0 && (
+                  <div className="text-center py-8">
+                    <Briefcase className="h-12 w-12 mx-auto text-gray-300" />
+                    <h3 className="mt-4 text-lg font-medium">No work experiences yet</h3>
+                    <p className="mt-2 text-sm text-gray-500">
+                      Add your first work experience using the Add button above
+                    </p>
+                  </div>
+                )}
+
+                {!isLoading && apiExperiences.length > 0 && (
                   <>
                     <h3 className="font-semibold text-lg mb-2 mt-4">Your Experiences</h3>
                     {apiExperiences.map((exp) => (
                       <Card key={exp.id} className="mb-4">
                         <CardContent className="pt-6">
                           <div className="flex justify-between items-start">
-                            <div>
+                          <div>
                               <h4 className="font-bold text-lg">{exp.title}</h4>
                               <p className="text-gray-600">{exp.company_name}</p>
                               <p className="text-sm text-gray-500">
-                                {exp.start_date} - {exp.end_date || 'Present'} • {exp.location || 'Remote'}
+                                {formatDate(exp.start_date)} - {exp.end_date ? formatDate(exp.end_date) : 'Present'} • {exp.location || 'Remote'}
                               </p>
                               <p className="mt-2">{exp.description}</p>
                               
@@ -720,9 +757,9 @@ const ProfessionalExperience: React.FC = () => {
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                      </CardContent>
+                    </Card>
+                  ))}
                   </>
                 )}
               </CardContent>
@@ -750,63 +787,63 @@ const ProfessionalExperience: React.FC = () => {
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-6">
-                    {MOCK_PROJECTS.map((project) => (
-                      <Card key={project.id} className="group hover:shadow-md transition-all duration-300 hover:border-primary">
-                        <CardContent className="p-6">
-                          <div className="flex justify-between items-start mb-4">
-                            <div>
-                              <h3 className="font-semibold text-xl group-hover:text-primary transition-colors">
-                                {project.title}
-                              </h3>
-                              <div className="flex items-center space-x-2 text-sm text-muted-foreground mt-1">
-                                <span>{project.date}</span>
-                                <span>•</span>
-                                <span className="capitalize">{project.projectType} Project</span>
-                              </div>
-                              {project.description && (
-                                <p className="text-gray-600 dark:text-gray-300 mt-2">
-                                  {project.description}
-                                </p>
-                              )}
+                <div className="space-y-6">
+                  {MOCK_PROJECTS.map((project) => (
+                    <Card key={project.id} className="group hover:shadow-md transition-all duration-300 hover:border-primary">
+                      <CardContent className="p-6">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <h3 className="font-semibold text-xl group-hover:text-primary transition-colors">
+                              {project.title}
+                            </h3>
+                            <div className="flex items-center space-x-2 text-sm text-muted-foreground mt-1">
+                              <span>{project.date}</span>
+                              <span>•</span>
+                              <span className="capitalize">{project.projectType} Project</span>
                             </div>
+                            {project.description && (
+                              <p className="text-gray-600 dark:text-gray-300 mt-2">
+                                {project.description}
+                              </p>
+                            )}
                           </div>
-                          
-                          <div className="flex flex-wrap gap-2 my-3">
-                            {project.technologies.map((tech, index) => (
-                              <span
-                                key={index}
-                                className="px-2 py-1 rounded-full bg-primary/10 text-primary text-sm"
-                              >
-                                {tech}
-                              </span>
-                            ))}
-                          </div>
-
-                          <ul className="space-y-2 mt-4">
-                            {project.highlights.map((highlight, index) => (
-                              <li key={index} className="flex items-start">
-                                <Zap className="w-4 h-4 text-primary mt-1 mr-2 flex-shrink-0" />
-                                <span className="text-gray-600 dark:text-gray-300">{highlight}</span>
-                              </li>
-                            ))}
-                          </ul>
-
-                          {project.link && (
-                            <a
-                              href={project.link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center mt-4 text-primary hover:underline"
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-2 my-3">
+                          {project.technologies.map((tech, index) => (
+                            <span
+                              key={index}
+                              className="px-2 py-1 rounded-full bg-primary/10 text-primary text-sm"
                             >
-                              <FolderGit2 className="w-4 h-4 mr-2" />
-                              View Project
-                            </a>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                              {tech}
+                            </span>
+                          ))}
+                        </div>
+
+                        <ul className="space-y-2 mt-4">
+                          {project.highlights.map((highlight, index) => (
+                            <li key={index} className="flex items-start">
+                              <Zap className="w-4 h-4 text-primary mt-1 mr-2 flex-shrink-0" />
+                              <span className="text-gray-600 dark:text-gray-300">{highlight}</span>
+                            </li>
+                          ))}
+                        </ul>
+
+                        {project.link && (
+                          <a
+                            href={project.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center mt-4 text-primary hover:underline"
+                          >
+                            <FolderGit2 className="w-4 h-4 mr-2" />
+                            View Project
+                          </a>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
                 )}
               </CardContent>
             </Card>

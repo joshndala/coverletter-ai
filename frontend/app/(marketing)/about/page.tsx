@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 
 export const metadata = {
   title: "About - CoverForMe",
-  description: "Learn about our mission to revolutionize the job application process.",
+  description: "Learn about my mission to revolutionize the job application process.",
 };
 
 const AboutPage = () => {
@@ -17,7 +17,7 @@ const AboutPage = () => {
             About CoverForMe
           </h1>
           <p className="text-lg text-gray-600">
-            Our mission is to simplify the job application process by helping job seekers create personalized, 
+            My mission is to simplify the job application process by helping job seekers create personalized, 
             high-quality cover letters that showcase their unique qualifications.
           </p>
         </div>
@@ -26,15 +26,15 @@ const AboutPage = () => {
           <Card className="shadow-lg mb-8">
             <CardContent className="p-8">
               <h2 className="text-2xl font-bold text-primary mb-4">
-                Our Story
+                My Story
               </h2>
               <p className="text-gray-600 mb-4">
                 CoverForMe was born out of a simple observation: writing effective cover letters is time-consuming,
-                repetitive, and often frustrating. As job seekers ourselves, we experienced the challenge of crafting
+                repetitive, and often frustrating. As a job seeker myself, I experienced the challenge of crafting
                 unique letters for each application while ensuring they were tailored to specific job requirements.
               </p>
               <p className="text-gray-600">
-                We built this platform to leverage the power of AI to analyze job descriptions, 
+                I built this platform to leverage the power of AI to analyze job descriptions, 
                 match them with your skills and experiences, and generate compelling cover letters 
                 that help you stand out in the application process.
               </p>
@@ -44,33 +44,33 @@ const AboutPage = () => {
           <Card className="shadow-lg mb-8">
             <CardContent className="p-8">
               <h2 className="text-2xl font-bold text-primary mb-4">
-                Our Values
+                My Values
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <h3 className="text-xl font-semibold mb-2">Accessibility</h3>
                   <p className="text-gray-600">
-                    We believe everyone deserves access to tools that improve their job search,
+                    I believe everyone deserves access to tools that improve their job search,
                     regardless of their background or experience level.
                   </p>
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold mb-2">Quality</h3>
                   <p className="text-gray-600">
-                    We're committed to producing high-quality cover letters that reflect your
+                    I'm committed to producing high-quality cover letters that reflect your
                     professional voice and highlight your relevant experiences.
                   </p>
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold mb-2">Innovation</h3>
                   <p className="text-gray-600">
-                    We continuously improve our AI models to generate more tailored and effective content.
+                    I continuously improve the AI models to generate more tailored and effective content.
                   </p>
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold mb-2">Privacy</h3>
                   <p className="text-gray-600">
-                    We respect your data and ensure that your personal information is secure and private.
+                    I respect your data and ensure that your personal information is secure and private.
                   </p>
                 </div>
               </div>
@@ -80,7 +80,7 @@ const AboutPage = () => {
           <Card className="shadow-lg">
             <CardContent className="p-8">
               <h2 className="text-2xl font-bold text-primary mb-4">
-                Meet the Creator
+                About Me
               </h2>
               <div className="flex flex-col md:flex-row gap-6 items-center">
                 <div className="w-32 h-32 bg-gray-200 rounded-full flex-shrink-0 overflow-hidden">
@@ -95,7 +95,7 @@ const AboutPage = () => {
                 <div>
                   <h3 className="text-xl font-semibold mb-2">Joshua Ndala</h3>
                   <p className="text-gray-600 mb-4">
-                    (Brief bio about my background, experience, and why I created this platform)
+                    I'm a UBC Computer Science graduate with a truly global background. Born and raised in South Africa, I've also lived in Uganda, Ivory Coast, and now Canada. My international upbringing sparked my curiosity for technology and diverse cultures, which led me to pursue Computer Science. I'm passionate about data science, software development, and AI, with expertise in Python, R, SQL, Java, and various other technologies. My diverse background inspires me to create innovative solutions like CoverForMe that help people achieve their professional goals.
                   </p>
                   <div className="flex gap-4">
                     <a href="https://linkedin.com/in/joshua-ndala" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">

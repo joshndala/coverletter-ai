@@ -1,27 +1,37 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
-import { FileText, Copy, Download, Edit, CheckCircle, XCircle } from "lucide-react";
+import { FileText, Copy, Download, Edit, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { CoverLetter, updateCoverLetter } from '../api/cover-letter';
+import { toast } from "@/components/ui/use-toast";
 
 interface CoverLetterViewerProps {
-  coverLetter: {
-    id: string | number;
-    company: string;
-    position: string;
-    content: string;
-    createdAt: string;
-    updatedAt: string;
-  };
+  coverLetter: CoverLetter;
 }
 
 export default function CoverLetterViewer({ coverLetter }: CoverLetterViewerProps) {
+  // Process the content to handle literal \n characters
+  const processContent = (content: string | null | undefined): string => {
+    if (!content) return '';
+    
+    // Replace literal '\n' with actual newlines
+    return content.replace(/\\n/g, '\n');
+  };
+  
+  const initialContent = processContent(coverLetter.generated_content);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedContent, setEditedContent] = useState(coverLetter.content);
+  const [editedContent, setEditedContent] = useState(initialContent);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // If cover letter content changes (e.g., from API update), update the edited content
+  useEffect(() => {
+    setEditedContent(processContent(coverLetter.generated_content));
+  }, [coverLetter.generated_content]);
   
   // Mock data for review section - in a real app this would come from an API
   const jobMatchPercentage = 75;
@@ -32,28 +42,72 @@ export default function CoverLetterViewer({ coverLetter }: CoverLetterViewerProp
     { text: "Your portfolio of projects demonstrates relevant skills", positive: true },
   ];
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(editedContent);
-    // Could add a toast notification here
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(editedContent);
+      toast({
+        title: "Copied!",
+        description: "Cover letter content copied to clipboard",
+      });
+    } catch (err) {
+      console.error("Failed to copy text: ", err);
+      toast({
+        title: "Error",
+        description: "Failed to copy to clipboard",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDownloadPDF = () => {
     // In a real app, this would generate and download a PDF
     console.log("Downloading PDF...");
-    // Implementation would typically involve a backend API call
+    toast({
+      title: "Coming Soon",
+      description: "PDF download functionality will be available soon",
+    });
   };
 
-  const handleSave = () => {
-    // In a real app, this would save the changes to the backend
-    console.log("Saving changes...");
-    setIsEditing(false);
-    // Implementation would typically involve a backend API call
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await updateCoverLetter(coverLetter.id, {
+        generated_content: editedContent
+      });
+      setIsEditing(false);
+      toast({
+        title: "Success",
+        description: "Cover letter has been updated",
+      });
+    } catch (error) {
+      console.error("Error saving cover letter:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save changes",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Extract job title from job description or use "Position" as fallback
+  const getJobTitle = () => {
+    if (coverLetter.job_description) {
+      // Try to extract title from first few lines of job description
+      const firstLines = coverLetter.job_description.split('\n').slice(0, 5).join(' ');
+      const titleMatch = firstLines.match(/(?:position|job title|role|title)[\s:]+([^.,]+)/i);
+      if (titleMatch && titleMatch[1]) {
+        return titleMatch[1].trim();
+      }
+    }
+    return "Position at " + coverLetter.company_name;
   };
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-primary mb-2">{coverLetter.position}</h1>
-      <h2 className="text-xl text-gray-600 mb-6">{coverLetter.company}</h2>
+      <h1 className="text-3xl font-bold text-primary mb-2">{getJobTitle()}</h1>
+      <h2 className="text-xl text-gray-600 mb-6">{coverLetter.company_name}</h2>
       
       <Tabs defaultValue="cover-letter" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-8">
@@ -78,6 +132,7 @@ export default function CoverLetterViewer({ coverLetter }: CoverLetterViewerProp
                     variant="outline" 
                     size="sm" 
                     onClick={() => setIsEditing(!isEditing)}
+                    disabled={isSaving}
                   >
                     <Edit className="w-4 h-4 mr-2" />
                     {isEditing ? "Cancel" : "Edit"}
@@ -86,6 +141,7 @@ export default function CoverLetterViewer({ coverLetter }: CoverLetterViewerProp
                     variant="outline" 
                     size="sm"
                     onClick={handleCopy}
+                    disabled={isSaving}
                   >
                     <Copy className="w-4 h-4 mr-2" />
                     Copy
@@ -94,6 +150,7 @@ export default function CoverLetterViewer({ coverLetter }: CoverLetterViewerProp
                     variant="outline" 
                     size="sm"
                     onClick={handleDownloadPDF}
+                    disabled={isSaving}
                   >
                     <Download className="w-4 h-4 mr-2" />
                     Download PDF
@@ -101,7 +158,7 @@ export default function CoverLetterViewer({ coverLetter }: CoverLetterViewerProp
                 </div>
               </div>
               <CardDescription>
-                Last updated on {new Date(coverLetter.updatedAt).toLocaleDateString()}
+                Last updated on {new Date(coverLetter.updated_at || coverLetter.created_at || new Date()).toLocaleDateString()}
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6">
@@ -111,14 +168,22 @@ export default function CoverLetterViewer({ coverLetter }: CoverLetterViewerProp
                     value={editedContent}
                     onChange={(e) => setEditedContent(e.target.value)}
                     className="min-h-[500px] font-serif text-base leading-relaxed p-4"
+                    disabled={isSaving}
                   />
-                  <Button onClick={handleSave} className="mt-4">
-                    Save Changes
+                  <Button onClick={handleSave} className="mt-4" disabled={isSaving}>
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      "Save Changes"
+                    )}
                   </Button>
                 </div>
               ) : (
                 <div className="prose prose-primary max-w-none font-serif text-base leading-relaxed whitespace-pre-wrap">
-                  {editedContent}
+                  {editedContent || <em className="text-gray-400">No content generated yet.</em>}
                 </div>
               )}
             </CardContent>

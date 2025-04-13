@@ -1,4 +1,5 @@
 import { getAuthFromStorage } from '@/lib/sessionStorage';
+import { authenticatedRequest } from '@/lib/apiClient';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
@@ -36,34 +37,13 @@ export interface CoverLetter extends CoverLetterBase {
   selected_experiences?: CoverLetterExperienceLink[];
 }
 
-// Helper function to get auth headers
-const getAuthHeaders = () => {
-  const auth = getAuthFromStorage();
-  if (!auth || !auth.firebase_id_token) {
-    throw new Error('User not authenticated');
-  }
-  
-  return {
-    'Authorization': `Bearer ${auth.firebase_id_token}`,
-    'Content-Type': 'application/json'
-  };
-};
-
 // Create a new cover letter
 export const createCoverLetter = async (coverLetter: CoverLetterCreate): Promise<CoverLetter> => {
   try {
-    const response = await fetch(`${API_URL}/cover-letters`, {
+    return await authenticatedRequest<CoverLetter>('cover-letters', {
       method: 'POST',
-      headers: getAuthHeaders(),
       body: JSON.stringify(coverLetter)
     });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.detail || 'Failed to create cover letter');
-    }
-    
-    return await response.json();
   } catch (error) {
     console.error("Error creating cover letter:", error);
     throw error;
@@ -73,17 +53,9 @@ export const createCoverLetter = async (coverLetter: CoverLetterCreate): Promise
 // Get all cover letters for the current user
 export const getUserCoverLetters = async (): Promise<CoverLetter[]> => {
   try {
-    const response = await fetch(`${API_URL}/cover-letters`, {
-      method: 'GET',
-      headers: getAuthHeaders()
+    return await authenticatedRequest<CoverLetter[]>('cover-letters', {
+      method: 'GET'
     });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.detail || 'Failed to fetch cover letters');
-    }
-    
-    return await response.json();
   } catch (error) {
     console.error("Error fetching cover letters:", error);
     throw error;
@@ -93,17 +65,9 @@ export const getUserCoverLetters = async (): Promise<CoverLetter[]> => {
 // Get a specific cover letter by ID
 export const getCoverLetter = async (coverLetterId: string): Promise<CoverLetter> => {
   try {
-    const response = await fetch(`${API_URL}/cover-letters/${coverLetterId}`, {
-      method: 'GET',
-      headers: getAuthHeaders()
+    return await authenticatedRequest<CoverLetter>(`cover-letters/${coverLetterId}`, {
+      method: 'GET'
     });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.detail || 'Failed to fetch cover letter');
-    }
-    
-    return await response.json();
   } catch (error) {
     console.error(`Error fetching cover letter ${coverLetterId}:`, error);
     throw error;
@@ -113,18 +77,10 @@ export const getCoverLetter = async (coverLetterId: string): Promise<CoverLetter
 // Update an existing cover letter
 export const updateCoverLetter = async (coverLetterId: string, update: CoverLetterUpdate): Promise<CoverLetter> => {
   try {
-    const response = await fetch(`${API_URL}/cover-letters/${coverLetterId}`, {
+    return await authenticatedRequest<CoverLetter>(`cover-letters/${coverLetterId}`, {
       method: 'PUT',
-      headers: getAuthHeaders(),
       body: JSON.stringify(update)
     });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.detail || 'Failed to update cover letter');
-    }
-    
-    return await response.json();
   } catch (error) {
     console.error(`Error updating cover letter ${coverLetterId}:`, error);
     throw error;
@@ -134,15 +90,9 @@ export const updateCoverLetter = async (coverLetterId: string, update: CoverLett
 // Delete a cover letter
 export const deleteCoverLetter = async (coverLetterId: string): Promise<void> => {
   try {
-    const response = await fetch(`${API_URL}/cover-letters/${coverLetterId}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders()
+    await authenticatedRequest(`cover-letters/${coverLetterId}`, {
+      method: 'DELETE'
     });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.detail || 'Failed to delete cover letter');
-    }
   } catch (error) {
     console.error(`Error deleting cover letter ${coverLetterId}:`, error);
     throw error;
@@ -170,18 +120,10 @@ export interface GenerateCoverLetterResponse {
 
 export const generateCoverLetterContent = async (request: GenerateCoverLetterRequest): Promise<GenerateCoverLetterResponse> => {
   try {
-    const response = await fetch(`${API_URL}/cover-letters/generate`, {
+    return await authenticatedRequest<GenerateCoverLetterResponse>('cover-letters/generate', {
       method: 'POST',
-      headers: getAuthHeaders(),
       body: JSON.stringify(request)
     });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.detail || 'Failed to generate cover letter content');
-    }
-    
-    return await response.json();
   } catch (error) {
     console.error("Error generating cover letter content:", error);
     throw error;
@@ -195,17 +137,9 @@ export const addExperienceToCoverLetter = async (
   relevanceOrder: number
 ): Promise<any> => {
   try {
-    const response = await fetch(`${API_URL}/cover-letters/${coverLetterId}/experiences/${experienceId}?relevance_order=${relevanceOrder}`, {
-      method: 'POST',
-      headers: getAuthHeaders()
+    return await authenticatedRequest(`cover-letters/${coverLetterId}/experiences/${experienceId}?relevance_order=${relevanceOrder}`, {
+      method: 'POST'
     });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.detail || 'Failed to add experience to cover letter');
-    }
-    
-    return await response.json();
   } catch (error) {
     console.error(`Error adding experience to cover letter:`, error);
     throw error;
@@ -218,15 +152,9 @@ export const removeExperienceFromCoverLetter = async (
   experienceId: string
 ): Promise<void> => {
   try {
-    const response = await fetch(`${API_URL}/cover-letters/${coverLetterId}/experiences/${experienceId}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders()
+    await authenticatedRequest(`cover-letters/${coverLetterId}/experiences/${experienceId}`, {
+      method: 'DELETE'
     });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.detail || 'Failed to remove experience from cover letter');
-    }
   } catch (error) {
     console.error(`Error removing experience from cover letter:`, error);
     throw error;

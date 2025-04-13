@@ -8,7 +8,7 @@ sqlalchemy==2.0.27
 psycopg2-binary==2.9.9
 alembic==1.13.1
 pydantic-settings
-"langchain[all]"
+langchain[all]
 pgvector
-"passlib[bcrypt]"
+passlib[bcrypt]
 firebase-admin

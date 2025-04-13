@@ -23,6 +23,13 @@ import { CoverLetter, getUserCoverLetters, deleteCoverLetter } from '../api/cove
 import { toast } from '@/components/ui/use-toast';
 import { format } from 'date-fns';
 
+// Process content to handle literal \n characters
+const processContent = (content: string | null | undefined): string => {
+  if (!content) return '';
+  // Replace literal '\n' with actual newlines
+  return content.replace(/\\n/g, '\n');
+};
+
 const MyCoverLettersPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('newest');
@@ -88,7 +95,10 @@ const MyCoverLettersPage = () => {
       return;
     }
     
-    navigator.clipboard.writeText(content).then(() => {
+    // Process the content to replace \n with actual newlines before copying
+    const processedContent = processContent(content);
+    
+    navigator.clipboard.writeText(processedContent).then(() => {
       toast({
         title: 'Success',
         description: 'Cover letter copied to clipboard',
@@ -111,6 +121,17 @@ const MyCoverLettersPage = () => {
     } catch (err) {
       return dateString;
     }
+  };
+  
+  // Get a preview of the content with proper line breaks
+  const getContentPreview = (content: string | null | undefined): string => {
+    if (!content) return 'No content generated yet. Click "View" to add content.';
+    
+    const processedContent = processContent(content);
+    const firstLine = processedContent.split('\n')[0] || '';
+    const previewText = processedContent.substring(0, 120).replace(/\n/g, ' ');
+    
+    return previewText + (previewText.length < processedContent.length ? '...' : '');
   };
   
   // Search and sort logic
@@ -268,13 +289,11 @@ const MyCoverLettersPage = () => {
                         </div>
                       </div>
                       <p className="text-gray-600 text-sm mt-3 line-clamp-2">
-                        {letter.generated_content 
-                          ? letter.generated_content.substring(0, 120) + '...' 
-                          : 'No content generated yet. Click "View" to add content.'}
+                        {getContentPreview(letter.generated_content)}
                       </p>
                     </div>
                     <div className="flex flex-row md:flex-col justify-end space-x-2 md:space-x-0 md:space-y-2">
-                      <Link href={`/cover-letter/${letter.id}`}>
+                      <Link href={`/cover-letters/${letter.id}`}>
                         <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary hover:text-white w-full">
                           View
                         </Button>

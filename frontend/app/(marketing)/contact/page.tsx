@@ -8,7 +8,7 @@ import { Mail, Linkedin, Github, Send } from "lucide-react";
 
 export const metadata = {
   title: "Contact - CoverForMe",
-  description: "Get in touch with the CoverForMe team for support or questions.",
+  description: "Get in touch with me for support or questions about CoverForMe.",
 };
 
 const ContactPage = () => {
@@ -21,7 +21,7 @@ const ContactPage = () => {
             Get In Touch
           </h1>
           <p className="text-lg text-gray-600">
-            Have questions or feedback? We'd love to hear from you!
+            Have questions or feedback? I'd love to hear from you!
           </p>
         </div>
 
@@ -51,7 +51,7 @@ const ContactPage = () => {
                   <Label htmlFor="message">Message</Label>
                   <Textarea 
                     id="message" 
-                    placeholder="Tell us how we can help you..." 
+                    placeholder="Tell me how I can help you..." 
                     className="min-h-[150px]"
                     required 
                   />
@@ -115,7 +115,7 @@ const ContactPage = () => {
                   Response Time
                 </h2>
                 <p className="text-gray-600">
-                  We aim to respond to all inquiries within 24-48 hours during business days.
+                  I aim to respond to all inquiries within 24-48 hours during business days.
                 </p>
               </CardContent>
             </Card>
@@ -126,7 +126,7 @@ const ContactPage = () => {
                   FAQ
                 </h2>
                 <p className="text-gray-600 mb-4">
-                  Have a general question? Check our FAQ section first.
+                  Have a general question? Check my FAQ section first.
                 </p>
                 <a href="/how-it-works#faq" className="text-primary hover:underline">
                   View Frequently Asked Questions
