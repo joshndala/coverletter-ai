@@ -17,14 +17,7 @@ app = FastAPI()
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000", 
-        "http://127.0.0.1:3000", 
-        "https://localhost:3000", 
-        "https://127.0.0.1:3000",
-        "http://frontend:3000",       # Docker service name
-        "http://frontend"             # Docker service without port
-    ],
+    allow_origins=["*"],  # In production, replace with specific origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -34,3 +27,7 @@ app.add_middleware(
 app.include_router(cover_letters.router, prefix="/api")
 app.include_router(auth.router, prefix="/api")
 app.include_router(experiences.router, prefix="/api")
+
+@app.get("/")
+async def root():
+    return {"message": "Welcome to the Cover Letter AI API"}

@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     TEST_USER_ID: str = os.getenv("TEST_USER_ID")
     TEST_USER_EMAIL: str = os.getenv("TEST_USER_EMAIL")
     TEST_USER_NAME: str = os.getenv("TEST_USER_NAME")
+    HF_TOKEN: str = os.getenv("HF_TOKEN")
 
     class Config:
         env_file = ".env"

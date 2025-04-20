@@ -7,185 +7,157 @@ import re
 from sqlalchemy.orm import Session
 from models.cover_letter import CoverLetter, CoverLetterExperience
 from sqlalchemy import and_
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 import uuid
 from datetime import datetime
+from sqlalchemy.exc import IntegrityError
 
+from models.experience import Experience
+from schemas.cover_letter import CoverLetterCreate, CoverLetterUpdate
+from services.experience_service import get_top_experiences
 # Parser for the generated cover letter
 parser = PydanticOutputParser(pydantic_object=CoverLetterOutput)
 
 # CRUD Operations for Cover Letters
-async def create_cover_letter(
-    db: Session,
-    user_id: uuid.UUID,
-    company_name: str,
-    job_description: str,
-    hiring_manager: Optional[str] = None,
-    generated_content: Optional[str] = None,
-    status: str = "draft"
-):
-    """
-    Create a new cover letter for a user.
-    """
-    cover_letter = CoverLetter(
-        user_id=user_id,
-        company_name=company_name,
-        hiring_manager=hiring_manager,
-        job_description=job_description,
-        generated_content=generated_content,
-        status=status
-    )
-    
-    db.add(cover_letter)
-    db.commit()
-    db.refresh(cover_letter)
-    
-    return cover_letter
-
-
-async def get_user_cover_letters(
-    db: Session,
-    user_id: uuid.UUID
-) -> List[CoverLetter]:
-    """
-    Retrieve all cover letters for a user.
-    """
-    cover_letters = db.query(CoverLetter).filter(CoverLetter.user_id == user_id).all()
-    return cover_letters
-
-
-async def get_cover_letter(
-    db: Session,
-    cover_letter_id: uuid.UUID,
-    user_id: uuid.UUID
-) -> CoverLetter:
-    """
-    Retrieve a specific cover letter for a user.
-    """
-    cover_letter = db.query(CoverLetter).filter(
-        and_(
-            CoverLetter.id == cover_letter_id,
-            CoverLetter.user_id == user_id
+async def create_cover_letter(db: Session, user_id: uuid.UUID, cover_letter_data: CoverLetterCreate) -> CoverLetter:
+    """Create a new cover letter for a user."""
+    try:
+        # Create a new cover letter instance
+        cover_letter = CoverLetter(
+            user_id=user_id,
+            **cover_letter_data.model_dump()
         )
+        
+        # Add to database
+        db.add(cover_letter)
+        db.commit()
+        db.refresh(cover_letter)
+        
+        return cover_letter
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to create cover letter. Please check your input."
+        )
+
+async def get_cover_letters(db: Session, user_id: uuid.UUID) -> List[CoverLetter]:
+    """Get all cover letters for a user."""
+    return db.query(CoverLetter).filter(CoverLetter.user_id == user_id).all()
+
+async def get_cover_letter(db: Session, cover_letter_id: uuid.UUID, user_id: uuid.UUID) -> CoverLetter:
+    """Get a specific cover letter by ID."""
+    cover_letter = db.query(CoverLetter).filter(
+        CoverLetter.id == cover_letter_id,
+        CoverLetter.user_id == user_id
     ).first()
     
     if not cover_letter:
-        raise HTTPException(status_code=404, detail="Cover letter not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Cover letter not found"
+        )
     
     return cover_letter
-
 
 async def update_cover_letter(
     db: Session,
     cover_letter_id: uuid.UUID,
     user_id: uuid.UUID,
-    company_name: Optional[str] = None,
-    hiring_manager: Optional[str] = None,
-    job_description: Optional[str] = None,
-    generated_content: Optional[str] = None,
-    status: Optional[str] = None
+    cover_letter_data: CoverLetterUpdate
 ) -> CoverLetter:
-    """
-    Update an existing cover letter for a user.
-    """
-    # Get the cover letter
+    """Update an existing cover letter."""
     cover_letter = await get_cover_letter(db, cover_letter_id, user_id)
     
-    # Update fields if provided
-    if company_name is not None:
-        cover_letter.company_name = company_name
-    if hiring_manager is not None:
-        cover_letter.hiring_manager = hiring_manager
-    if job_description is not None:
-        cover_letter.job_description = job_description
-    if generated_content is not None:
-        cover_letter.generated_content = generated_content
-    if status is not None:
-        cover_letter.status = status
+    # Update only provided fields
+    update_data = cover_letter_data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(cover_letter, field, value)
     
-    # Update timestamp
-    cover_letter.updated_at = datetime.utcnow()
-    
-    # Commit changes
-    db.commit()
-    db.refresh(cover_letter)
-    
-    return cover_letter
+    try:
+        db.commit()
+        db.refresh(cover_letter)
+        return cover_letter
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to update cover letter. Please check your input."
+        )
 
-
-async def delete_cover_letter(
-    db: Session,
-    cover_letter_id: uuid.UUID,
-    user_id: uuid.UUID
-) -> bool:
-    """
-    Delete a cover letter for a user.
-    """
-    # Get the cover letter (to verify it exists and belongs to the user)
+async def delete_cover_letter(db: Session, cover_letter_id: uuid.UUID, user_id: uuid.UUID) -> None:
+    """Delete a cover letter."""
     cover_letter = await get_cover_letter(db, cover_letter_id, user_id)
     
-    # Delete the cover letter
-    db.delete(cover_letter)
-    db.commit()
-    
-    return True
-
+    try:
+        db.delete(cover_letter)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to delete cover letter."
+        )
 
 async def add_experience_to_cover_letter(
     db: Session,
     cover_letter_id: uuid.UUID,
     experience_id: uuid.UUID,
-    user_id: uuid.UUID,
-    relevance_order: int
-) -> CoverLetterExperience:
-    """
-    Add an experience to a cover letter.
-    """
-    # Verify the cover letter exists and belongs to the user
+    user_id: uuid.UUID
+) -> CoverLetter:
+    """Add an experience to a cover letter."""
+    # Verify cover letter exists and belongs to user
     cover_letter = await get_cover_letter(db, cover_letter_id, user_id)
     
-    # Create the link
-    link = CoverLetterExperience(
-        cover_letter_id=cover_letter_id,
-        experience_id=experience_id,
-        relevance_order=relevance_order
-    )
+    # Verify experience exists and belongs to user
+    experience = db.query(Experience).filter(
+        Experience.id == experience_id,
+        Experience.user_id == user_id
+    ).first()
     
-    db.add(link)
-    db.commit()
-    db.refresh(link)
+    if not experience:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Experience not found"
+        )
     
-    return link
-
+    # Add experience to cover letter if not already added
+    if experience not in cover_letter.experiences:
+        cover_letter.experiences.append(experience)
+        db.commit()
+        db.refresh(cover_letter)
+    
+    return cover_letter
 
 async def remove_experience_from_cover_letter(
     db: Session,
     cover_letter_id: uuid.UUID,
     experience_id: uuid.UUID,
     user_id: uuid.UUID
-) -> bool:
-    """
-    Remove an experience from a cover letter.
-    """
-    # Verify the cover letter exists and belongs to the user
+) -> CoverLetter:
+    """Remove an experience from a cover letter."""
+    # Verify cover letter exists and belongs to user
     cover_letter = await get_cover_letter(db, cover_letter_id, user_id)
     
-    # Find and delete the link
-    link = db.query(CoverLetterExperience).filter(
-        and_(
-            CoverLetterExperience.cover_letter_id == cover_letter_id,
-            CoverLetterExperience.experience_id == experience_id
-        )
+    # Find the experience in the cover letter
+    experience = db.query(Experience).filter(
+        Experience.id == experience_id,
+        Experience.user_id == user_id
     ).first()
     
-    if not link:
-        raise HTTPException(status_code=404, detail="Experience not linked to this cover letter")
+    if not experience:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Experience not found"
+        )
     
-    db.delete(link)
-    db.commit()
+    # Remove experience from cover letter if it exists
+    if experience in cover_letter.experiences:
+        cover_letter.experiences.remove(experience)
+        db.commit()
+        db.refresh(cover_letter)
     
-    return True
-
+    return cover_letter
 
 # Existing function for generating cover letter content
 async def generate_cover_letter(request: CoverLetterRequest, bedrock_client):

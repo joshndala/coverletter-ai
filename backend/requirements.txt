@@ -12,3 +12,4 @@ langchain[all]
 pgvector
 passlib[bcrypt]
 firebase-admin
+sentence-transformers==2.2.2

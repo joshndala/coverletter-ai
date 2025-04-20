@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
 from models.experience import Experience
 import uuid
@@ -6,6 +6,8 @@ from datetime import date
 from fastapi import HTTPException
 from sqlalchemy import and_, text
 import logging
+from sentence_transformers import SentenceTransformer, CrossEncoder
+import numpy as np
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -158,3 +160,67 @@ async def delete_experience(
     db.commit()
     
     return True
+
+
+async def get_top_experiences(db: Session, user_id: str, job_description: str, top_k: int = 2) -> List[Dict[str, Any]]:
+    """
+    Retrieve the top k experiences for a user based on semantic similarity to a job description.
+    
+    Args:
+        db: Database session
+        user_id: User ID
+        job_description: Job description to match against
+        top_k: Number of top experiences to return (default: 2)
+        
+    Returns:
+        List of top experiences with similarity scores
+    """
+    # Get all experiences for the user
+    experiences = db.query(Experience).filter(Experience.user_id == user_id).all()
+    
+    if not experiences:
+        return []
+    
+    # Initialize the sentence transformer model
+    model = SentenceTransformer('all-MiniLM-L6-v2')
+    
+    # Generate embeddings for the job description
+    job_embedding = model.encode(job_description)
+    
+    # Calculate similarity scores for each experience
+    experience_scores = []
+    for exp in experiences:
+        # Use the content_for_embedding field if available, otherwise use description
+        content = exp.content_for_embedding if exp.content_for_embedding else exp.description
+        
+        # Generate embedding for the experience
+        exp_embedding = model.encode(content)
+        
+        # Calculate cosine similarity
+        similarity = np.dot(job_embedding, exp_embedding) / (np.linalg.norm(job_embedding) * np.linalg.norm(exp_embedding))
+        
+        experience_scores.append({
+            "experience": exp,
+            "similarity_score": float(similarity)
+        })
+    
+    # Sort experiences by similarity score (descending)
+    experience_scores.sort(key=lambda x: x["similarity_score"], reverse=True)
+    
+    # Return the top k experiences
+    top_experiences = []
+    for i, exp_score in enumerate(experience_scores[:top_k]):
+        exp = exp_score["experience"]
+        top_experiences.append({
+            "id": str(exp.id),
+            "company_name": exp.company_name,
+            "title": exp.title,
+            "location": exp.location,
+            "start_date": exp.start_date,
+            "end_date": exp.end_date,
+            "is_current": exp.is_current,
+            "description": exp.description,
+            "similarity_score": exp_score["similarity_score"]
+        })
+    
+    return top_experiences
