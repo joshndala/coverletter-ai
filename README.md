@@ -12,8 +12,6 @@ Cover Letter AI is a full-stack application that leverages artificial intelligen
 
 - **AI-Powered Cover Letter Generation**: Create customized cover letters in seconds using AWS Bedrock's LLM technology
 - **Experience Management**: Add, edit, and organize your work experiences with detailed descriptions and achievements
-- **Skills Tracking**: Maintain a comprehensive list of your professional skills
-- **Education & Certifications**: Document your educational background and professional certifications
 - **Cover Letter Library**: Store and manage multiple cover letters for different job applications
 - **Company Information Search**: A web tool that searches and provides detailed information about companies, including:
   - Company overview and mission
