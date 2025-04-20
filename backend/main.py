@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, get_db
-from routers import cover_letters, auth, experiences
+from routers import auth, experiences, cover_letters, company_search
 import logging
 import sys
 
@@ -24,9 +24,10 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(cover_letters.router, prefix="/api")
-app.include_router(auth.router, prefix="/api")
-app.include_router(experiences.router, prefix="/api")
+app.include_router(auth.router)
+app.include_router(experiences.router)
+app.include_router(cover_letters.router)
+app.include_router(company_search.router)
 
 @app.get("/")
 async def root():

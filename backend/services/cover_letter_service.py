@@ -15,6 +15,8 @@ from sqlalchemy.exc import IntegrityError
 from models.experience import Experience
 from schemas.cover_letter import CoverLetterCreate, CoverLetterUpdate
 from services.experience_service import get_top_experiences
+from services.company_search_service import get_company_context_for_cover_letter
+
 # Parser for the generated cover letter
 parser = PydanticOutputParser(pydantic_object=CoverLetterOutput)
 
@@ -161,7 +163,21 @@ async def remove_experience_from_cover_letter(
 
 # Existing function for generating cover letter content
 async def generate_cover_letter(request: CoverLetterRequest, bedrock_client):
-    prompt = construct_prompt(request)
+    # Get company context if company name is provided
+    company_context = ""
+    if request.company_name:
+        try:
+            company_info = await get_company_context_for_cover_letter(
+                company_name=request.company_name,
+                job_description=request.job_description
+            )
+            if "context" in company_info and company_info["context"]:
+                company_context = f"\n\nCompany Context:\n{company_info['context']}"
+        except Exception as e:
+            # Log the error but continue without company context
+            print(f"Error getting company context: {str(e)}")
+    
+    prompt = construct_prompt(request, company_context)
     
     try:
         response = bedrock_client.invoke_model(
@@ -197,7 +213,7 @@ async def generate_cover_letter(request: CoverLetterRequest, bedrock_client):
         raise Exception(f"Error generating cover letter: {str(e)}")
 
 
-def construct_prompt(request: CoverLetterRequest) -> str:
+def construct_prompt(request: CoverLetterRequest, company_context: str = "") -> str:
     experiences_text = "\n".join([
         f"- {exp.title}: {exp.description} (Skills: {', '.join(exp.skills)})" 
         for exp in request.experiences
@@ -214,6 +230,8 @@ def construct_prompt(request: CoverLetterRequest) -> str:
         {experiences}
 
         {hiring_manager_text}
+        
+        {company_context}
 
         Requirements:
         1. Write a compelling cover letter that:
@@ -234,7 +252,7 @@ def construct_prompt(request: CoverLetterRequest) -> str:
 
     prompt = PromptTemplate(
         template=template,
-        input_variables=["company_name", "job_description", "experiences", "hiring_manager_text"],
+        input_variables=["company_name", "job_description", "experiences", "hiring_manager_text", "company_context"],
         partial_variables={"format_instructions": parser.get_format_instructions()}
     )
     
@@ -244,5 +262,6 @@ def construct_prompt(request: CoverLetterRequest) -> str:
         company_name=request.company_name,
         job_description=request.job_description,
         experiences=experiences_text,
-        hiring_manager_text=hiring_manager_text
+        hiring_manager_text=hiring_manager_text,
+        company_context=company_context
     )

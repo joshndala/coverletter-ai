@@ -19,7 +19,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 router = APIRouter(
-    prefix="/experiences",
+    prefix="/api/experiences",
     tags=["experiences"],
     responses={404: {"description": "Not found"}},
 )

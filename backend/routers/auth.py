@@ -9,7 +9,11 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-router = APIRouter(tags=["Authentication"])
+router = APIRouter(
+    prefix="/api/auth",
+    tags=["Authentication"],
+    responses={404: {"description": "Not found"}},
+)
 
 # Quick debugging route (temporary)
 @router.get("/debug-db-connection")

@@ -15,18 +15,21 @@ Cover Letter AI is a full-stack application that leverages artificial intelligen
 - **Skills Tracking**: Maintain a comprehensive list of your professional skills
 - **Education & Certifications**: Document your educational background and professional certifications
 - **Cover Letter Library**: Store and manage multiple cover letters for different job applications
-- **User Authentication**: Secure login and account management
-- **Responsive Design**: Works seamlessly on desktop and mobile devices
-
-### Coming Soon
-
-- **Company Information Search**: A web tool that will search and provide detailed information about companies, including:
+- **Company Information Search**: A web tool that searches and provides detailed information about companies, including:
   - Company overview and mission
   - Culture and values
   - Recent news and developments
   - Key products and services
   - Leadership team
-  - This information will be incorporated into your cover letters to demonstrate genuine interest and knowledge about the company
+  - This information is automatically incorporated into your cover letters to demonstrate genuine interest and knowledge about the company
+- **User Authentication**: Secure login and account management
+- **Responsive Design**: Works seamlessly on desktop and mobile devices
+
+### Coming Soon
+
+- **Enhanced AI Features**: More advanced AI capabilities for cover letter generation
+- **Template Library**: Pre-designed cover letter templates for different industries
+- **Analytics Dashboard**: Track application success rates and get insights on your cover letters
 
 ## Technology Stack
 
@@ -36,6 +39,8 @@ Cover Letter AI is a full-stack application that leverages artificial intelligen
 - **AWS Bedrock**: LLM service for AI-powered content generation
 - **PostgreSQL**: Relational database
 - **JWT Authentication**: Secure user authentication
+- **SerpAPI**: Web search integration for company research
+- **LangChain**: Framework for AI-powered applications
 
 ### Frontend
 - **Next.js**: React framework for building the user interface
