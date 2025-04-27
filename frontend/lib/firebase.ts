@@ -70,7 +70,7 @@ export const registerWithBackend = async (firebaseUser: any, additionalData = {}
     const idToken = await firebaseUser.getIdToken();
     
     // Register with backend
-    const response = await fetch(`${API_URL}/register`, {
+    const response = await fetch(`${API_URL}/auth/register`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${idToken}`,
@@ -116,7 +116,7 @@ export const getCurrentUser = async () => {
     
     const idToken = await currentUser.getIdToken();
     
-    const response = await fetch(`${API_URL}/me`, {
+    const response = await fetch(`${API_URL}/auth/me`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${idToken}`

@@ -10,9 +10,12 @@ class CoverLetter(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    job_title = Column(String(255), nullable=False)
     company_name = Column(String(255), nullable=False, index=True)
     hiring_manager = Column(String(255), nullable=True)
     job_description = Column(Text, nullable=False)
+    tone = Column(String(50), default='professional')
+    max_length = Column(Integer, default=500)
     generated_content = Column(Text)
     status = Column(String(50), default='draft')
     created_at = Column(DateTime(timezone=True), server_default=func.now())

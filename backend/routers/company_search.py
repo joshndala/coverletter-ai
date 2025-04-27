@@ -4,7 +4,7 @@ from typing import Dict, Any
 from database import get_db
 from schemas.company_search import CompanySearchRequest, CompanySearchResponse
 from services import company_search_service
-from services.auth_service import get_current_user
+from routers.auth import get_current_user_dependency
 import logging
 
 # Configure logging
@@ -19,7 +19,7 @@ router = APIRouter(
 @router.post("", response_model=CompanySearchResponse)
 async def search_company(
     request: CompanySearchRequest,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user_dependency)
 ):
     """
     Search for company information and generate a summary.

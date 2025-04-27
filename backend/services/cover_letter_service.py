@@ -1,8 +1,8 @@
 from typing import List, Optional
 import json
 from models.request_models import CoverLetterRequest, CoverLetterOutput
-from langchain.output_parsers import PydanticOutputParser
-from langchain.prompts import PromptTemplate
+from langchain_core.output_parsers import PydanticOutputParser
+from langchain_core.prompts import PromptTemplate
 import re
 from sqlalchemy.orm import Session
 from models.cover_letter import CoverLetter, CoverLetterExperience

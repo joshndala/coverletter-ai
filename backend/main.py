@@ -1,23 +1,23 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from database import engine, get_db
+from database import engine
 from routers import auth, experiences, cover_letters, company_search
 import logging
-import sys
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler(sys.stdout)]
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
+logger = logging.getLogger(__name__)
 
-app = FastAPI()
+# Create FastAPI app
+app = FastAPI(title="Cover Letter AI API")
 
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
+    allow_origins=["http://localhost:3000"],  # Frontend URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -31,4 +31,4 @@ app.include_router(company_search.router)
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to the Cover Letter AI API"}
+    return {"message": "Welcome to Cover Letter AI API"}

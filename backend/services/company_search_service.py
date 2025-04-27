@@ -2,9 +2,9 @@ import os
 from typing import Dict, Any, Optional
 import json
 import boto3
-from langchain.utilities import SerpAPIWrapper
-from langchain.chat_models import BedrockChat
-from langchain.prompts import PromptTemplate
+from langchain_community.utilities import SerpAPIWrapper
+from langchain_community.chat_models import BedrockChat
+from langchain_core.prompts import PromptTemplate
 
 # Initialize the search utility
 search = SerpAPIWrapper()
