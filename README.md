@@ -1,10 +1,10 @@
-# Cover Letter AI
+# CoverForMe
 
 A powerful application that helps job seekers create personalized, AI-generated cover letters tailored to specific job descriptions and companies.
 
 ## Overview
 
-Cover Letter AI is a full-stack application that leverages artificial intelligence to generate professional cover letters based on your work experience, skills, and the specific job you're applying for. The application uses advanced language models to create compelling narratives that highlight your relevant qualifications and connect them to job requirements.
+CoverForMe is a full-stack application that leverages artificial intelligence to generate professional cover letters based on your work experience, skills, and the specific job you're applying for. The application uses advanced language models to create compelling narratives that highlight your relevant qualifications and connect them to job requirements.
 
 ## Features
 
